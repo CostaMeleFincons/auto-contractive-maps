@@ -1,0 +1,5 @@
+# Path to movie files
+pathVideos: /home/sreich/dataslow/data/UMGDatensatz/
+
+# Path to skeleton hdf5 files
+pathSkeleton: /home/sreich/dataslow/data/UMGDatensatz_skeleton/
