@@ -184,7 +184,10 @@ class acm:
         for i in range(self.N):
             for j in range(self.N):
                 if not corr[i][j] == 0:
-                    print('Connection: ' + str(self.label[i]) + ' --> \t' + str(self.label[j]) + '\t' + str(corr[i][j]))
+                    print('Connection: {0}\t--> {1}\tWeight: {2:.3f}'.format(
+                        self.label[i],
+                        self.label[j],
+                        corr[i][j]))
 
 
 
