@@ -1,5 +1,7 @@
 # ac-maps
 
+tl;dr: WARNING: Do not use Auto Contractive Maps. They do exactly the opposite of what they claim to do.
+
 This program implements an Auto Contractive Map algorithm as defined in Buscema, Massimo, et al. "Auto-contractive maps: an artificial adaptive system for data mining. An application to Alzheimer disease." Current Alzheimer Research 5.5 (2008): 481-498.
 
 ## Installation
@@ -70,5 +72,5 @@ Auto contractive maps fail to show correlations in heavily correlated data. Inst
 
 Furthermore, the stopping criteria in the paper says that one should stop learning, if the output neurons are `0`. First, this is an utterly random criteria (even though the formulas are created such that the weight change will also drop to 0, if the output neurons turn to zero). The number of training samples used depends on the hyperparameter C.
 
-For the first time steps (assuming first layer weights `\vec{v}_i << 1` and second layer weights `W_{ij} << 1`) one can show that the weight change `\Delta W_{ij}` is `\Delta W_{ij} \approx N/2 x m^s_i x m^s_j`, where `m_s` is the input vector and `N` its length. This means that at least for the first iteration. Afterwards, this is summed up and normalized again, meaning that iteratively something like a correlation matrix is build. 
+For the first time steps (assuming first layer weights `\vec{v}_i << 1` and second layer weights `W_{ij} << 1`) one can show that the weight change `\Delta W_{ij}` is `\Delta W_{ij} \approx N/2 x m^s_i x m^s_j`, where `m_s` is the input vector and `N` its length. Afterwards, this is summed up and normalized again, meaning that iteratively something like a correlation matrix is build (at least for the first iterations. However, learning slows down after the first few iterations.). 
 The graph extraction algorithm, minimum spanning tree, than selects the edges according to their lowest values (corresponding to low "correlation") and presents it to the user. This is most likely the opposite of what the user actually wants and expects.
