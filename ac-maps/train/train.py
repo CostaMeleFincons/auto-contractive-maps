@@ -195,20 +195,17 @@ class acm:
         cellFrom = []
         cellTo = []
         corrEdge = []
+        G = nx.Graph() 
         for i in range(self.N):
             for j in range(self.N):
                 if not corr[i][j] == 0:
                     cellFrom.append(self.label[i])
                     cellTo.append(self.label[j])
                     corrEdge.append(corr[i][j])
-
-        df = pd.DataFrame({'from':cellFrom, 'to':cellTo, 'weight': corrEdge})
-
-        # Build your graph
-        G=nx.from_pandas_edgelist(df, 'from', 'to', 'weight')
+                    G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
 
         # Plot the network:
-        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=1, font_size=15)
+        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
         plt.show()
 
 
@@ -228,8 +225,8 @@ def main():
     cAcm = acm(N, C)
 
     # Create training samples
-    #cAcm.createTrainingRandom()
-    cAcm.createTrainingCorrelated()
+    cAcm.createTrainingRandom()
+    #cAcm.createTrainingCorrelated()
 
     # Run training
     cAcm.run()
