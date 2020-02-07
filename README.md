@@ -9,8 +9,8 @@ This program implements an Auto Contractive Map algorithm as defined in Buscema,
 Clone project
 
 ```bash
-git clone git@github.com:simonreich/auto-contractive-maps.git
-cd ac-maps/ac-maps
+git clone https://github.com/simonreich/auto-contractive-maps.git
+cd auto-contractive-maps/ac-maps
 ```
 
 Optional: Install a local virtual environment for Python.
@@ -26,7 +26,7 @@ pip install numpy scipy pandas networkx matplotlib
 To run the program use
 
 ```bash
-cd ac-maps/ac-maps/train
+cd auto-contractive-maps/ac-maps/train
 python ./train.py
 ```
 
