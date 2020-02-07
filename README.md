@@ -1,4 +1,4 @@
-# ac-maps
+# Auto Contractive Maps
 
 tl;dr: WARNING: Do not use Auto Contractive Maps. They do exactly the opposite of what they claim to do.
 
