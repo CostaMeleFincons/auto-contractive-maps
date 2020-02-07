@@ -9,7 +9,7 @@ This program implements an Auto Contractive Map algorithm as defined in Buscema,
 Clone project
 
 ```bash
-git clone git@gitlab.gwdg.de:sreich/ac-maps.git
+git clone git@github.com:simonreich/auto-contractive-maps.git
 cd ac-maps/ac-maps
 ```
 
