@@ -106,6 +106,7 @@ class acm:
 
             The each vector is drawn randomly from a uniform distribution, meaning there is no correlation.
         '''
+        # Create random training data
         self.training = np.random.rand(1000, self.N)
 
         # Create labels
@@ -114,11 +115,12 @@ class acm:
             self.label.append('R' + str(j))
 
 
+
     def createTrainingCorrelated(self):
         ''' This function creates 1000 training samples.
 
             The each vector is made up as follows:
-            [rand1, 2*rand1, 3*rand1, rand1^2, 2*rand1^2, 3*rand1^2, rand2, rand3, rand4, ... randN]
+            ['R1', '2xR1', 'R1+0.1', 'R1^2', '2*R1^2', '3xR1^2', 'R2>0.9', 'R3>0.9', 'R4>0.9', 'R5>0.9']
         '''
 
         if self.N < 6:
@@ -129,7 +131,7 @@ class acm:
         for i in range(8, self.N):
             self.label.append('R' + str(i))
 
-
+        # Create correlated training data
         self.training = []
         for i in range(1000):
             v = np.zeros(self.N, dtype=float)
@@ -143,12 +145,11 @@ class acm:
             v[7] = np.random.rand(1)[0]*0.1 + 0.9
             v[8] = np.random.rand(1)[0]*0.1 + 0.9
             v[9] = np.random.rand(1)[0]*0.1 + 0.9
-            #for j in range(8, self.N):
+            #for j in range(6, self.N):
             #    v[j] = np.random.rand(1)
             #    self.label.append('R' + str(j))
 
             self.training.append(v)
-
 
 
 
@@ -160,7 +161,6 @@ class acm:
         for x in self.training:
             self.runOnce(x)
             self.cnt += 1
-
 
             # Check, if training is finished
             # Requested precision is 1e-6,
