@@ -120,7 +120,7 @@ class acm:
 
 
 
-    def createTrainingCorrelated(self):
+    def createTrainingCorrelated1(self):
         ''' This function creates 1000 training samples.
 
             The each vector is made up as follows:
@@ -149,6 +149,47 @@ class acm:
             v[7] = np.random.rand(1)[0]*0.1 + 0.9
             v[8] = np.random.rand(1)[0]*0.1 + 0.9
             v[9] = np.random.rand(1)[0]*0.1 + 0.9
+            #for j in range(6, self.N):
+            #    v[j] = np.random.rand(1)
+            #    self.label.append('R' + str(j))
+
+            self.training.append(v)
+
+
+
+    def createTrainingCorrelated2(self):
+        ''' This function creates 1000 training samples.
+
+            The each vector is made up as follows:
+            ['R1', '2xR1', 'R1+0.1', 'R1^2', '2*R1^2', '3xR1^2', 'R2>0.9', 'R3>0.9', 'R4>0.9', 'R5>0.9']
+        '''
+
+        if self.N < 6:
+            raise ValueError('For createTrainingCorrelated an input vector size of at least 6 is needed.')
+
+        # Create labels
+        self.label= ['R1', '2xR1', 'R1+0.1', 'R1^2', '2*R1^2', '3xR1^2', 'R2>0.9', 'R3>0.9', 'R4>0.9', 'R5>0.9'] 
+        for i in range(8, self.N):
+            self.label.append('R' + str(i))
+
+        # Create correlated training data
+        self.training = []
+        for i in range(1000):
+            v = np.zeros(self.N, dtype=float)
+            v[0] = np.random.rand(1)[0]
+            v[1] = v[0]*2
+            v[2] = v[0]+0.1
+            v[3] = v[0]*v[0]
+            v[4] = v[0]*v[0]*2
+            v[5] = v[0]*v[0]*3
+            v[6] = np.random.rand(1)[0]
+            v[7] = np.random.rand(1)[0]*0.1
+            v[8] = np.random.rand(1)[0]*0.1
+            v[9] = np.random.rand(1)[0]*0.1
+            if v[6] > 0.5:
+                v[7] += 0.9
+                v[8] += 0.9
+                v[9] += 0.9
             #for j in range(6, self.N):
             #    v[j] = np.random.rand(1)
             #    self.label.append('R' + str(j))
@@ -227,11 +268,11 @@ class acm:
         # Filenames
         date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = str(date)
-        filenameWeights = os.path.join(_folderOut, 'weights_' + filename + '.txt')
-        filenameWeightsPlot = os.path.join(_folderOut, 'weights_' + filename + '.plot')
-        filenameWeightsPng = os.path.join(_folderOut, 'weights_' + filename + '.png')
-        filenameWeightsTex = os.path.join(_folderOut, 'weights_' + filename + '.tex')
-        filenameGraph = os.path.join(_folderOut, 'graph_' + filename + '.png')
+        filenameWeights = os.path.join(_folderOut, filename + '_weights.txt')
+        filenameWeightsPlot = os.path.join(_folderOut, filename + '._weightsplot')
+        filenameWeightsPng = os.path.join(_folderOut, filename + '_weights.png')
+        filenameWeightsTex = os.path.join(_folderOut, filename + '_weights.tex')
+        filenameGraph = os.path.join(_folderOut, filename + '_graph.png')
 
         # Save weights
         self.writeFile(filenameWeights, self.w)
@@ -338,8 +379,9 @@ def main():
     cAcm = acm(N, C)
 
     # Create training samples
-    cAcm.createTrainingRandom()
-    #cAcm.createTrainingCorrelated()
+    #cAcm.createTrainingRandom()
+    #cAcm.createTrainingCorrelated1()
+    cAcm.createTrainingCorrelated2()
 
     # Run training
     cAcm.run()
