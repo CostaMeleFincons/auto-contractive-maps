@@ -1,0 +1,8 @@
+# Path to output folder. 
+# May be relative to this one.
+# All output files will be stored here
+folderOut: ../out
+
+# Gnuplot template
+# jinja2 template, which will create a heat map from the weights.
+pathTemplate: ../out/weights.plot.jinja2

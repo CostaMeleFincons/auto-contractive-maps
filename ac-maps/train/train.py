@@ -15,12 +15,16 @@ This file is part of ac-maps.
 
 
 
+from datetime import datetime
+import os
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree
+import yaml
 
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
+import jinja2
 
 
 
@@ -207,16 +211,122 @@ class acm:
                     corrEdge.append(corr[i][j])
                     G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
 
-        # Plot the network:
+        # Plot the network
         nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
         plt.show()
 
+
+
+    def save(self, _folderOut, _pathTemplate):
+        ''' This function saves all results to file.
+
+            Arguments:
+                _folderOut (str): All output files will be placed in this folder.
+                _pathTemplate (str): Path to jinja2 template for gnuplot weight heat map.
+        '''
+        # Filenames
+        date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        filename = str(date)
+        filenameWeights = os.path.join(_folderOut, 'weights_' + filename + '.txt')
+        filenameWeightsPlot = os.path.join(_folderOut, 'weights_' + filename + '.plot')
+        filenameWeightsPng = os.path.join(_folderOut, 'weights_' + filename + '.png')
+        filenameWeightsTex = os.path.join(_folderOut, 'weights_' + filename + '.tex')
+        filenameGraph = os.path.join(_folderOut, 'graph_' + filename + '.png')
+
+        # Save weights
+        self.writeFile(filenameWeights, self.w)
+
+        # Create gnuplot scripts from jinja2 template
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('weights.plot.jinja2')
+        script = template.render(filenameWeightsPng=filenameWeightsPng, 
+                filenameWeightsTex=filenameWeightsTex,
+                filenameWeights=os.path.basename(filenameWeights),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                cbrange=str(int(np.amin(self.w))) + ':' + str(int(np.amax(self.w))+1))
+
+        fp = open(filenameWeightsPlot, 'w')
+        fp.write(script)
+        fp.close()
+
+        # Save graph
+        corr = self.mst.toarray().astype(float)
+        cellFrom = []
+        cellTo = []
+        corrEdge = []
+        G = nx.Graph() 
+        for i in range(self.N):
+            for j in range(self.N):
+                if not corr[i][j] == 0:
+                    cellFrom.append(self.label[i])
+                    cellTo.append(self.label[j])
+                    corrEdge.append(corr[i][j])
+                    G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
+        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
+        plt.savefig(filenameGraph, dpi=None, facecolor='w', edgecolor='w',
+                orientation='portrait')
+
+
+
+    def writeFile(self, _filename, _data, _header=None, _debug=False):
+        ''' Write data to file.
+            If header is given, it is stored before data.
+
+            Arguments:
+                _filename (str): Full path to file.
+                _data (List): List of data.
+                _header=None (List): 1d list for header information.
+                _debug=False (bool): Turn debug output for this class on/off. Can also be set by self.debug=True/False.
+        '''
+        self.debug = _debug
+
+        # Saving to file
+        if self.debug: print('Saving to file ' + str(_filename))
+        fp = open(_filename, 'w')
+        if _header:
+            headerStr = ''
+            for datum in _header:
+                headerStr += str(datum) + '\t'
+            headerStr += '\n'
+            fp.write(headerStr)
+        for datum in _data:
+            datumStr = ''
+            cnt = 0
+            for value in datum:
+                datumStr += str(value)
+                if cnt < len(datum)-1:
+                    datumStr += '\t'
+                cnt += 1
+            datumStr += '\n'
+            fp.write(datumStr)
+        fp.close()
 
 
 
 def main():
     ''' This program trains an Auto Contractive Map.
     '''
+    # Read yaml config file
+    filename = './config.yaml'
+    config = ''
+    try:  
+        with open(str(filename), 'r') as fp:  
+            for cnt, line in enumerate(fp):
+                config += str(line)
+    finally:  
+        fp.close()
+    try:
+        config = yaml.safe_load(config)
+    except yaml.YAMLError as exc:
+        print(exc)
+        raise
+    if not 'folderOut' in config:
+        raise ValueError('folderOut not specified in config file. Exiting.')
+    configFolderOut = str(config['folderOut'])
+    if not 'pathTemplate' in config:
+        raise ValueError('pathTemplate not specified in config file. Exiting.')
+    configPathTemplate = str(config['pathTemplate'])
 
     # Length of input vector
     N = 10
@@ -238,7 +348,10 @@ def main():
     cAcm.printTree()
 
     # Draw resulting tree
-    cAcm.draw()
+    #cAcm.draw()
+
+    # Save results to file
+    cAcm.save(configFolderOut, configPathTemplate)
 
 
 

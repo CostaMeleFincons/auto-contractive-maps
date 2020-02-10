@@ -1,0 +1,32 @@
+reset
+
+set output "{{ filenameWeightsPng }}"
+set terminal png size 1024,768
+NO_ANIMATION = 1
+
+set title "Heat Map of weight matrix $w$"
+set ylabel '$i$'
+set xlabel '$j$'
+set xrange [{{ range }}] noreverse nowriteback
+set yrange [{{ range }}] noreverse nowriteback
+
+unset key
+
+set style data lines
+
+set tic scale 0
+
+# Color box
+set cbtics border in scale 0,0 mirror norotate autojustify
+set colorbox vertical origin screen 0.9, 0.2 size screen 0.03, 0.6 front noinvert noborder
+set colorbox user
+set palette rgbformula 33,13,10
+set cbrange [{{ cbrange }}]
+set cblabel "Weight"
+
+set view map
+splot "{{ filenameWeights }}" matrix with image
+
+set terminal tikz plotsize 9,6
+set output "{{ filenameWeightsTex }}"
+replot

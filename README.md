@@ -18,10 +18,17 @@ Optional: Install a local virtual environment for Python.
 ```bash
 virtualenv -p python3 ./
 source bin/activate
-pip install numpy scipy pandas networkx matplotlib
+pip install numpy scipy pandas networkx matplotlib jinja2 pyyaml
 ```
 
 ## Running
+
+First, please have a look at the file `config.yaml` in `auto-contractive-maps/ac-maps/train`. There parameters are:
+
+| Parameter | Description |
+|-----------|-------------|
+| `folderOut` | Specifies the output folder of all generated files.|
+| `pathTemplate` | Path to jinja2 template, which generates a gnuplot script for a heatmap of the weight matrix. |
 
 To run the program use
 
