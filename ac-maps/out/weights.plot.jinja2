@@ -1,14 +1,17 @@
 reset
 
-set output "{{ filenameWeightsPng }}"
+set output '{{ filenameWeightsPng }}'
 set terminal png size 1024,768
 NO_ANIMATION = 1
 
-set title "Heat Map of weight matrix $w$"
-set ylabel '$i$'
-set xlabel '$j$'
+#set title 'Heat Map of weight matrix $W$'
+#set ylabel '$i$'
+#set xlabel '$j$'
+set title ''
+set ylabel ''
+set xlabel ''
 set xrange [{{ range }}] noreverse nowriteback
-set yrange [{{ range }}] noreverse nowriteback
+set yrange [{{ range }}] reverse nowriteback
 
 unset key
 
@@ -22,11 +25,12 @@ set colorbox vertical origin screen 0.9, 0.2 size screen 0.03, 0.6 front noinver
 set colorbox user
 set palette rgbformula 33,13,10
 set cbrange [{{ cbrange }}]
-set cblabel "Weight"
+#set cblabel 'Weight'
+set cblabel ''
 
 set view map
-splot "{{ filenameWeights }}" matrix with image
+splot '{{ filenameWeights }}' matrix with image
 
 set terminal tikz plotsize 9,6
-set output "{{ filenameWeightsTex }}"
+set output '{{ filenameWeightsTex }}'
 replot

@@ -32,12 +32,13 @@ class acm:
     ''' This class implements an Auto Contractive Map.
     '''
 
-    def __init__(self, _inputLength, _contraction):
+    def __init__(self, _inputLength, _contraction, _dataset):
         ''' Initialization function.
 
             Arguments:
                 _inputLength (int): Length of input vector
                 _contraction (float): Contraction parameter, _contraction>1.
+                _dataset (str): Name of dataset to use: 'random', 'correlated1', or 'correlated2'.
         '''
 
         # Length of input vector
@@ -45,12 +46,41 @@ class acm:
 
         # Contraction parameter
         self.C = _contraction
- 
+
+        # Labels of training data
+        self.label = ['' for x in range(self.N)]
+
+        # Dataset to use
+        self.dataset = _dataset
+
+        # Throw exception, if computation fails
+        np.seterr('raise')
+
+        # Runtime
+        self.cntFinal = []
+
+        # Weights
+        self.wFinal = []
+
+        # Weights
+        self.vFinal = []
+
+        # MST
+        self.mstFinal = []
+
+        # Reset
+        self.resetNN()
+
+
+
+    def resetNN(self):
+        ''' Resets variables for NN.
+        '''
         # First layer
-        self.v = np.full((1, self.N), 0.01, dtype=float)[0]
+        self.v = np.full((1, self.N), 0.001, dtype=float)[0]
  
         # Hidden layer
-        self.w = np.full((self.N, self.N), 0.01, dtype=float)
+        self.w = np.full((self.N, self.N), 0.001, dtype=float)
         
         # Neuron values
         self.mHidden = np.zeros((1, self.N), dtype=float)[0]
@@ -59,11 +89,9 @@ class acm:
         # Training data
         self.training = np.zeros((1, self.N), dtype=float)
 
-        # Labels of training data
-        self.label = ['' for x in range(self.N)]
-
-        # Throw exception, if computation fails
-        np.seterr('raise')
+        # Result matrices
+        self.wMean = np.zeros((self.N, self.N), dtype=float)
+        self.wStd = np.zeros((self.N, self.N), dtype=float)
 
 
 
@@ -131,7 +159,7 @@ class acm:
             raise ValueError('For createTrainingCorrelated an input vector size of at least 6 is needed.')
 
         # Create labels
-        self.label= ['R1', '2xR1', 'R1+0.1', 'R1^2', '2*R1^2', '3xR1^2', 'R2>0.9', 'R3>0.9', 'R4>0.9', 'R5>0.9'] 
+        self.label= ['R1', '2xR1', 'R1+0.1', 'R1^2', '2*R1^2', '3xR1^2', 'R2', 'R3', 'R4', 'R5'] 
         for i in range(8, self.N):
             self.label.append('R' + str(i))
 
@@ -145,10 +173,10 @@ class acm:
             v[3] = v[0]*v[0]
             v[4] = v[0]*v[0]*2
             v[5] = v[0]*v[0]*3
-            v[6] = np.random.rand(1)[0]*0.1 + 0.9
-            v[7] = np.random.rand(1)[0]*0.1 + 0.9
-            v[8] = np.random.rand(1)[0]*0.1 + 0.9
-            v[9] = np.random.rand(1)[0]*0.1 + 0.9
+            v[6] = np.random.rand(1)[0]
+            v[7] = np.random.rand(1)[0]
+            v[8] = np.random.rand(1)[0]
+            v[9] = np.random.rand(1)[0]
             #for j in range(6, self.N):
             #    v[j] = np.random.rand(1)
             #    self.label.append('R' + str(j))
@@ -198,34 +226,79 @@ class acm:
 
 
 
-    def run(self):
+    def run(self, _nr=1):
         ''' This function trains the map given the training samples in self.training.
+
+            Arguments:
+                _nr (int): Number of runs _nr >= 1.
         '''
+        # Perform _nr runs
+        cntNr = 0
+        while cntNr < _nr:
+            print('Running: ' + str(cntNr) + '/' + str(_nr))
 
-        self.cnt = 0
-        for x in self.training:
-            self.runOnce(x)
-            self.cnt += 1
+            # Reset Neural Net
+            self.resetNN()
 
-            # Check, if training is finished
-            # Requested precision is 1e-6,
-            # After that output oscillates and may throw RuntimeWarning:Overflow encounter
-            sumOut = np.sum(self.mOut)
-            if sumOut >= 0  and sumOut < 1e-6:
-                break
+            # Create training samples
+            if self.dataset == 'random':
+                self.createTrainingRandom()
+            elif self.dataset == 'correlated1':
+                self.createTrainingCorrelated1()
+            elif self.dataset == 'correlated2':
+                self.createTrainingCorrelated2()
 
-        # Compute minimum spanning tree (mst)
-        self.mst = minimum_spanning_tree(self.w)
+            # Runtime counter
+            cnt = 0
+            successfull = True
+            for x in self.training:
+                # For random data, the self.mOut will sometimes run away and will create a buffer overflow
+                if any(np.greater(self.mOut, 1e+10)) is True or \
+                        any(np.less(self.mOut, -1e+10)) is True:
+                    successfull = False
+                    cntNr -= 1
+                    break
+
+                #if len(self.cntFinal) > 1:
+                #    print('a', self.cntFinal[-1], self.mOut)
+                self.runOnce(x)
+                cnt += 1
+ 
+                # Check, if training is finished
+                # After that output oscillates and may throw RuntimeWarning:Overflow encounter
+                maxOut = np.amax(self.mOut)
+                minOut = np.amin(self.mOut)
+                if minOut >= 0  and maxOut < 1e-6:
+                    break
+ 
+            # Append results
+            if successfull:
+                self.mstFinal.append(minimum_spanning_tree(self.w))
+                self.cntFinal.append(cnt)
+                self.wFinal.append(self.w)
+                self.vFinal.append(self.v)
+
+            cntNr += 1
+
+        # Compute results
+        # Numpy seems to have trouble with a list of 2d matrices.
+        for i in range(self.N):
+            for j in range(self.N):
+                row = []
+                for k in range(len(self.cntFinal)):
+                    row.append(self.wFinal[k][i][j])
+                self.wMean[i][j] = np.mean(row)
+                self.wStd[i][j] = np.std(row)
 
 
 
     def printTree(self):
-        ''' This function prints the results of self.run().
+        ''' This function prints the last results of self.run().
         '''
 
-        print('Total number of runs: ' + str(self.cnt) + '\n')
+        print('Total number of training samples: ' + str(self.cntFinal[-1]) + '\n')
 
-        corr = self.mst.toarray().astype(float)
+        corr = self.mstFinal[-1].toarray().astype(float)
         for i in range(self.N):
             for j in range(self.N):
                 if not corr[i][j] == 0:
@@ -233,13 +306,31 @@ class acm:
                         self.label[i],
                         self.label[j],
                         corr[i][j]))
+        print('')
+
+
+
+    def printStatistics(self):
+        ''' This function prints statistics over all runs.
+        '''
+        print('Total number of runs: ' + str(len(self.cntFinal)))
+        print('Mean training length: {0:.2f} +- {1:.2f} ({2:.2f}%)'.format(
+                np.mean(self.cntFinal),
+                np.std(self.cntFinal),
+                100/np.mean(self.cntFinal)*np.std(self.cntFinal)))
+
+        print('Mean weights w: ' + str(self.wMean))
+        print('Std weights w: ' + str(self.wStd))
+
+        print('Mean weights w: ' + str(np.mean(self.w)))
+        print('Std weights w: ' + str(np.std(self.w)))
 
 
 
     def draw(self):
-        ''' This function draws the tree, which results from training.
+        ''' This function draws the tree, which results from the last run of self.run().
         '''
-        corr = self.mst.toarray().astype(float)
+        corr = self.mstFinal[-1].toarray().astype(float)
         cellFrom = []
         cellTo = []
         corrEdge = []
@@ -255,6 +346,7 @@ class acm:
         # Plot the network
         nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
         plt.show()
+        plt.clf()
 
 
 
@@ -267,17 +359,22 @@ class acm:
         '''
         # Filenames
         date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        filename = str(date)
+        filename = str(date) + '_dataset-' + str(self.dataset) + '_nrruns-' + str(len(self.cntFinal))
         filenameWeights = os.path.join(_folderOut, filename + '_weights.txt')
-        filenameWeightsPlot = os.path.join(_folderOut, filename + '._weightsplot')
+        filenameWeightsPlot = os.path.join(_folderOut, filename + '_weights.plot')
         filenameWeightsPng = os.path.join(_folderOut, filename + '_weights.png')
         filenameWeightsTex = os.path.join(_folderOut, filename + '_weights.tex')
+        filenameWeightsMean = os.path.join(_folderOut, filename + '_weightsmean.txt')
+        filenameWeightsMeanPlot = os.path.join(_folderOut, filename + '_weightsmean.plot')
+        filenameWeightsMeanPng = os.path.join(_folderOut, filename + '_weightsmean.png')
+        filenameWeightsMeanTex = os.path.join(_folderOut, filename + '_weightsmean.tex')
         filenameGraph = os.path.join(_folderOut, filename + '_graph.png')
+        filenameGraphMean = os.path.join(_folderOut, filename + '_graphmean.png')
 
-        # Save weights
-        self.writeFile(filenameWeights, self.w)
+        # Save weights of last run
+        self.writeFile(filenameWeights, np.around(self.w, decimals=3))
 
-        # Create gnuplot scripts from jinja2 template
+        # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
         templateEnv = jinja2.Environment(loader=templateLoader)
         template = templateEnv.get_template('weights.plot.jinja2')
@@ -291,8 +388,25 @@ class acm:
         fp.write(script)
         fp.close()
 
-        # Save graph
-        corr = self.mst.toarray().astype(float)
+        # Save weights mean
+        self.writeFile(filenameWeightsMean, np.around(self.wMean, decimals=3))
+
+        # Create gnuplot scripts from jinja2 template mean
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('weights.plot.jinja2')
+        script = template.render(filenameWeightsPng=filenameWeightsMeanPng, 
+                filenameWeightsTex=filenameWeightsMeanTex,
+                filenameWeights=os.path.basename(filenameWeightsMean),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                cbrange=str(int(np.amin(self.wMean)*10)/10) + ':' + str(int(np.amax(self.wMean)*10)/10+0.1))
+
+        fp = open(filenameWeightsMeanPlot, 'w')
+        fp.write(script)
+        fp.close()
+
+        # Save graph of last run
+        corr = self.mstFinal[-1].toarray().astype(float)
         cellFrom = []
         cellTo = []
         corrEdge = []
@@ -307,6 +421,25 @@ class acm:
         nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
         plt.savefig(filenameGraph, dpi=None, facecolor='w', edgecolor='w',
                 orientation='portrait')
+        plt.clf()
+
+        # Save graph mean
+        corr = minimum_spanning_tree(self.wMean).toarray().astype(float)
+        cellFrom = []
+        cellTo = []
+        corrEdge = []
+        G = nx.Graph() 
+        for i in range(self.N):
+            for j in range(self.N):
+                if not corr[i][j] == 0:
+                    cellFrom.append(self.label[i])
+                    cellTo.append(self.label[j])
+                    corrEdge.append(corr[i][j])
+                    G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
+        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
+        plt.savefig(filenameGraphMean, dpi=None, facecolor='w', edgecolor='w',
+                orientation='portrait')
+        plt.clf()
 
 
 
@@ -376,18 +509,17 @@ def main():
     C = 2
 
     # Class initialization
-    cAcm = acm(N, C)
-
-    # Create training samples
-    #cAcm.createTrainingRandom()
-    #cAcm.createTrainingCorrelated1()
-    cAcm.createTrainingCorrelated2()
+    #cAcm = acm(N, C, _dataset='random')
+    cAcm = acm(N, C, _dataset='correlated1')
 
     # Run training
-    cAcm.run()
+    cAcm.run(100)
 
     # Print results
     cAcm.printTree()
+
+    # Print statistics
+    cAcm.printStatistics()
 
     # Draw resulting tree
     #cAcm.draw()
