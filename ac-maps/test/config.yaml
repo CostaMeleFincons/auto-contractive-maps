@@ -1,0 +1,18 @@
+# Path to output folder. 
+# May be relative to this one.
+# All output files will be stored here
+folderOut: ../out
+
+# Gnuplot template
+# jinja2 template, which will create a heat map from the weights.
+pathTemplate: ../out/weights.plot.jinja2
+
+# MNIST dataset
+# Path to MNIST dataset. Must contain mnist_test.csv and mnist_train.csv.
+# Download from e.g.:
+# https://www.python-course.eu/data/mnist/mnist_train.csv
+# https://www.python-course.eu/data/mnist/mnist_test.csv
+pathMnist: ../data/mnist
+
+# Path to model to load
+pathModel: ../out/

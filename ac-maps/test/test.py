@@ -48,6 +48,9 @@ def main():
     if not 'pathMnist' in config:
         raise ValueError('pathMnist not specified in config file. Exiting.')
     configPathMnist = str(config['pathMnist'])
+    if not 'pathModel' in config:
+        raise ValueError('pathModel not specified in config file. Exiting.')
+    configPathModel = str(config['pathModel'])
 
     # Length of input vector
     N = 28*28
@@ -56,26 +59,13 @@ def main():
     C = 100
 
     # Class initialization
-    #cAcm = acm(N, C, _dataset='random')
-    #cAcm = acm(N, C, _dataset='correlated1')
-    #cAcm = acm(N, C, _dataset='correlated2')
-    #cAcm = acm.Acm(N, C, _dataset='correlated3')
-    cAcm = acm.Acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
+    cAcm = acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
 
     # Run training
-    cAcm.run(1)
-
-    # Print results
-    cAcm.printTree()
+    cAcm.load(configPathModel)
 
     # Print statistics
-    cAcm.printStatistics()
-
-    # Draw resulting tree
-    #cAcm.draw()
-
-    # Save results to file
-    cAcm.save(configFolderOut, configPathTemplate)
+    cAcm.testMnist()
 
 
 

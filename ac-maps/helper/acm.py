@@ -49,17 +49,16 @@ class Acm:
         # Contraction parameter
         self.C = _contraction
 
-        # Labels of training data
-        self.label = ['' for x in range(self.N)]
+        # Path to MNIST dataset
+        self.pathMnist = _pathMnist
 
         # Dataset to use
         self.dataset = _dataset
         if _dataset == 'mnist':
             self.loadMnist()
 
-
-        # Path to MNIST dataset
-        self.pathMnist = _pathMnist
+        # Labels of training data
+        self.label = ['' for x in range(self.N)]
 
         # Throw exception, if computation fails
         np.seterr('raise')
@@ -289,7 +288,7 @@ class Acm:
 
         # Load data
         self.mnistTrain = np.loadtxt(filenameTraining, delimiter=",")
-        #self.mnsitTest = np.loadtxt(filenameTest, delimiter=",") 
+        self.mnsitTest = np.loadtxt(filenameTest, delimiter=",") 
 
 
 
@@ -428,6 +427,42 @@ class Acm:
         nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
         plt.show()
         plt.clf()
+
+
+
+    def testMnist(self):
+        ''' This function tests learned weights against the MNIST testing set.
+        '''
+
+        if self.N < 28*28:
+            raise ValueError('For testMnist an input vector size of at least 28*28 is needed.')
+
+        # Extract data as [[input vector], label, prediction=None]
+        data = [np.array([x[1:]), int(x[0]), None] for x in self.mnistTest]
+
+        for cnt in in range(len(data)):
+            # Perform forward pass
+            x = data[cnt]
+
+            # 0. Normalize input to be [0, 1]
+            mIn = np.interp(x[0], (x[0].min(), x[0].max()), (0, 1))
+            assert np.amin(mIn) >= 0, 'Training sample holds data <0: ' + str(mIn)
+            assert np.amax(mIn) <= 1, 'Training sample holds data >1: ' + str(mIn)
+
+            # 1. v
+            mHidden = np.multiply(mIn, self.vMean)
+
+            # 2. w
+            mOut = np.matmul(w, mHidden)
+
+            # Sum up results
+            data[cnt][2] = np.sum(mOut)
+        for x in data:
+            if data[1] == 1:
+                print(x)
+        for x in data:
+            if not data[1] == 1:
+                print(x)
 
 
 
