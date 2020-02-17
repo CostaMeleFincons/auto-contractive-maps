@@ -23,19 +23,12 @@ pip install numpy scipy pandas networkx matplotlib jinja2 pyyaml
 
 ## Running
 
-First, please have a look at the file `config.yaml` in `auto-contractive-maps/ac-maps/train`. There parameters are:
+There are four project parts. Each part holds its own configuration and README file.
 
-| Parameter | Description |
-|-----------|-------------|
-| `folderOut` | Specifies the output folder of all generated files.|
-| `pathTemplate` | Path to jinja2 template, which generates a gnuplot script for a heatmap of the weight matrix. |
-
-To run the program use
-
-```bash
-cd auto-contractive-maps/ac-maps/train
-python ./train.py
-```
+1.  `train`: This program is used to train an AutoCM.
+2.  `test`: This program is used to test on the Mnist dataset againt an AutoCM map.
+3.  `mrg`: Compute one Maximally Regular Graph (MRG).
+4.  `helper`: Helper functions and classes.
 
 ## Experiments
 
