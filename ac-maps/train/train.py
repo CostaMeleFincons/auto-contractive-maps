@@ -50,20 +50,20 @@ def main():
     configPathMnist = str(config['pathMnist'])
 
     # Length of input vector
-    N = 28*28
+    N = 10
 
     # Contraction parameter
-    C = 100
+    C = 2
 
     # Class initialization
-    #cAcm = acm(N, C, _dataset='random')
-    #cAcm = acm(N, C, _dataset='correlated1')
-    #cAcm = acm(N, C, _dataset='correlated2')
+    #cAcm = acm.Acm(N, C, _dataset='random')
+    cAcm = acm.Acm(N, C, _dataset='correlated1')
+    #cAcm = acm.Acm(N, C, _dataset='correlated2')
     #cAcm = acm.Acm(N, C, _dataset='correlated3')
-    cAcm = acm.Acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
+    #cAcm = acm.Acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
 
     # Run training
-    cAcm.run(1)
+    cAcm.run(1000)
 
     # Print results
     cAcm.printTree()

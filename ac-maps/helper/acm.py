@@ -21,12 +21,13 @@ import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree
 import random
 import pickle
-
-import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import jinja2
 
+import sys
+sys.path.insert(0, '../helper')
+import mrg
 
 
 class Acm:
@@ -75,8 +76,14 @@ class Acm:
         # MST
         self.mstFinal = []
 
+        # MRG
+        self.mrgFinal = []
+
         # Reset
         self.resetNN()
+
+        # MRG class object
+        self.cMrg = mrg.Mrg()
 
 
 
@@ -165,7 +172,7 @@ class Acm:
         '''
 
         if self.N < 10:
-            raise ValueError('For createTrainingCorrelated an input vector size of at least 10 is needed.')
+            raise ValueError('For createTrainingCorrelated1 an input vector size of at least 10 is needed.')
 
         # Create labels
         self.label = ['R0', 'f1(R0)', 'f2(R0)', 'f3(R0)', 'f4(R0)', 'f5(R0)', 'R6', 'R7', 'R8', 'R9'] 
@@ -197,7 +204,7 @@ class Acm:
         '''
 
         if self.N < 10:
-            raise ValueError('For createTrainingCorrelated an input vector size of at least 10 is needed.')
+            raise ValueError('For createTrainingCorrelated2 an input vector size of at least 10 is needed.')
 
         # Create labels
         self.label = ['R0', 'R1(R0)', 'R2(R0)', 'R3(R0)', 'R4(R0)', 'R5(R0)', 'R6', 'R7(R6)', 'R8', 'R9(R8)'] 
@@ -235,7 +242,7 @@ class Acm:
         '''
 
         if self.N < 3:
-            raise ValueError('For createTrainingCorrelated an input vector size of at least 3 is needed.')
+            raise ValueError('For createTrainingCorrelated3 an input vector size of at least 3 is needed.')
 
         # Create labels
         self.label = ['0.2', '0.4', '1']
@@ -260,7 +267,7 @@ class Acm:
         '''
 
         if self.N < 28*28:
-            raise ValueError('For createTrainingCorrelated an input vector size of at least 28*28 is needed.')
+            raise ValueError('For createTrainingMnist an input vector size of at least 28*28 is needed.')
 
         # Create labels
         #self.label = ['R0', 'R1(R0)', 'R2(R0)', 'R3(R0)', 'R4(R0)', 'R5(R0)', 'R6', 'R7(R6)', 'R8', 'R9(R8)'] 
@@ -342,10 +349,13 @@ class Acm:
                 minOut = np.amin(self.mOut)
                 if minOut >= 0  and maxOut < 1e-6:
                     break
+                if self.dataset == 'mnist':
+                    print(cntNr, cnt, np.mean(self.mOut), minOut, maxOut)
  
             # Append results
             if successfull:
                 self.mstFinal.append(minimum_spanning_tree(self.w))
+                self.mrgFinal.append(self.cMrg.computeMrg(self.w)[0])
                 self.cntFinal.append(cnt)
                 self.wFinal.append(self.w)
                 self.vFinal.append(self.v)
@@ -378,7 +388,17 @@ class Acm:
 
         print('Total number of training samples: ' + str(self.cntFinal[-1]) + '\n')
 
+        print('MST:')
         corr = self.mstFinal[-1].toarray().astype(float)
+        for i in range(self.N):
+            for j in range(self.N):
+                if not corr[i][j] == 0:
+                    print('Connection: {0}\t--> {1}\tWeight: {2:.3f}'.format(
+                        self.label[i],
+                        self.label[j],
+                        corr[i][j]))
+        print('MRG:')
+        corr = self.mrgFinal[-1]
         for i in range(self.N):
             for j in range(self.N):
                 if not corr[i][j] == 0:
@@ -399,32 +419,26 @@ class Acm:
                 np.std(self.cntFinal),
                 100/np.mean(self.cntFinal)*np.std(self.cntFinal)))
 
+        print('Highest H score of Mean weights w: ' + str(self.cMrg.computeMrg(self.wMean)[1]))
+
         print('Mean weights w: ' + str(self.wMean))
         print('Std weights w: ' + str(self.wStd))
 
-        print('Mean weights w: ' + str(np.mean(self.w)))
-        print('Std weights w: ' + str(np.std(self.w)))
+        print('Mean weights w: ' + str(np.mean(self.wMean)))
+        print('Std weights w: ' + str(np.std(self.wStd)))
 
 
 
     def draw(self):
         ''' This function draws the tree, which results from the last run of self.run().
         '''
-        corr = self.mstFinal[-1].toarray().astype(float)
-        cellFrom = []
-        cellTo = []
-        corrEdge = []
-        G = nx.Graph() 
-        for i in range(self.N):
-            for j in range(self.N):
-                if not corr[i][j] == 0:
-                    cellFrom.append(self.label[i])
-                    cellTo.append(self.label[j])
-                    corrEdge.append(corr[i][j])
-                    G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
+        # MST
+        self.createGraph(self.mstFinal[-1].toarray().astype(float))
+        plt.show()
+        plt.clf()
 
-        # Plot the network
-        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
+        # MRG
+        self.createGraph(self.mrgFinal[-1])
         plt.show()
         plt.clf()
 
@@ -438,9 +452,9 @@ class Acm:
             raise ValueError('For testMnist an input vector size of at least 28*28 is needed.')
 
         # Extract data as [[input vector], label, prediction=None]
-        data = [np.array([x[1:]), int(x[0]), None] for x in self.mnistTest]
+        data = [[np.array(x[1:]), int(x[0]), None] for x in self.mnistTest]
 
-        for cnt in in range(len(data)):
+        for cnt in range(len(data)):
             # Perform forward pass
             x = data[cnt]
 
@@ -459,10 +473,33 @@ class Acm:
             data[cnt][2] = np.sum(mOut)
         for x in data:
             if data[1] == 1:
-                print(x)
+                print(x[1], x[2])
         for x in data:
             if not data[1] == 1:
-                print(x)
+                print(x[1], x[2])
+
+
+
+    def createGraph(self, _w):
+        ''' Creates a networkx graph out of a matrix in a matplotlib figure.
+
+            Arguments:
+                _w (np.array): Input matrix.
+        '''
+        cellFrom = []
+        cellTo = []
+        corrEdge = []
+        G = nx.Graph() 
+        for i in range(self.N):
+            for j in range(self.N):
+                if not _w[i][j] == 0:
+                    cellFrom.append(self.label[i])
+                    cellTo.append(self.label[j])
+                    corrEdge.append(_w[i][j])
+                    G.add_edge(self.label[i], self.label[j], weight=_w[i][j]*10000)
+        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
+
+
 
 
 
@@ -484,8 +521,10 @@ class Acm:
         filenameWeightsMeanPlot = os.path.join(_folderOut, filename + '_weightsmean.plot')
         filenameWeightsMeanPng = os.path.join(_folderOut, filename + '_weightsmean.png')
         filenameWeightsMeanTex = os.path.join(_folderOut, filename + '_weightsmean.tex')
-        filenameGraph = os.path.join(_folderOut, filename + '_graph.png')
-        filenameGraphMean = os.path.join(_folderOut, filename + '_graphmean.png')
+        filenameGraphMst = os.path.join(_folderOut, filename + '_mst.png')
+        filenameGraphMstMean = os.path.join(_folderOut, filename + '_mstmean.png')
+        filenameGraphMrg = os.path.join(_folderOut, filename + '_mrg.png')
+        filenameGraphMrgMean = os.path.join(_folderOut, filename + '_mrgmean.png')
         filenamePickle = os.path.join(_folderOut, filename + '_net.p')
 
         # Save weights of last run
@@ -522,39 +561,27 @@ class Acm:
         fp.write(script)
         fp.close()
 
-        # Save graph of last run
-        corr = self.mstFinal[-1].toarray().astype(float)
-        cellFrom = []
-        cellTo = []
-        corrEdge = []
-        G = nx.Graph() 
-        for i in range(self.N):
-            for j in range(self.N):
-                if not corr[i][j] == 0:
-                    cellFrom.append(self.label[i])
-                    cellTo.append(self.label[j])
-                    corrEdge.append(corr[i][j])
-                    G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
-        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
-        plt.savefig(filenameGraph, dpi=None, facecolor='w', edgecolor='w',
+        # Save graph of last run MST
+        self.createGraph(self.mstFinal[-1].toarray().astype(float))
+        plt.savefig(filenameGraphMst, dpi=None, facecolor='w', edgecolor='w',
                 orientation='portrait')
         plt.clf()
 
-        # Save graph mean
-        corr = minimum_spanning_tree(self.wMean).toarray().astype(float)
-        cellFrom = []
-        cellTo = []
-        corrEdge = []
-        G = nx.Graph() 
-        for i in range(self.N):
-            for j in range(self.N):
-                if not corr[i][j] == 0:
-                    cellFrom.append(self.label[i])
-                    cellTo.append(self.label[j])
-                    corrEdge.append(corr[i][j])
-                    G.add_edge(self.label[i], self.label[j], weight=corr[i][j]*10000)
-        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
-        plt.savefig(filenameGraphMean, dpi=None, facecolor='w', edgecolor='w',
+        # Save graph of last run MRG
+        self.createGraph(self.mrgFinal[-1])
+        plt.savefig(filenameGraphMrg, dpi=None, facecolor='w', edgecolor='w',
+                orientation='portrait')
+        plt.clf()
+
+        # Save graph mean MST
+        self.createGraph(minimum_spanning_tree(self.wMean).toarray().astype(float))
+        plt.savefig(filenameGraphMstMean, dpi=None, facecolor='w', edgecolor='w',
+                orientation='portrait')
+        plt.clf()
+
+        # Save graph mean MRG
+        self.createGraph(self.cMrg.computeMrg(self.wMean)[0])
+        plt.savefig(filenameGraphMrgMean, dpi=None, facecolor='w', edgecolor='w',
                 orientation='portrait')
         plt.clf()
 
@@ -569,6 +596,7 @@ class Acm:
         saveNet['wFinal'] = self.wFinal
         saveNet['vFinal'] = self.vFinal
         saveNet['mstFinal'] = self.mstFinal
+        saveNet['mrgFinal'] = self.mrgFinal
         saveNet['wMean'] = self.wMean
         saveNet['wStd'] = self.wStd
         saveNet['vMean'] = self.vMean
@@ -591,6 +619,7 @@ class Acm:
             self.wFinal = saveNet['wFinal']
             self.vFinal = saveNet['vFinal']
             self.mstFinal = saveNet['mstFinal']
+            self.mrgFinal = saveNet['mrgFinal']
             self.wMean = saveNet['wMean']
             self.wStd = saveNet['wStd']
             self.vMean = saveNet['vMean']

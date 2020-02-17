@@ -56,7 +56,7 @@ def main():
     N = 28*28
 
     # Contraction parameter
-    C = 100
+    C = 10
 
     # Class initialization
     cAcm = acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100

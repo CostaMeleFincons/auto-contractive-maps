@@ -15,4 +15,4 @@ pathTemplate: ../out/weights.plot.jinja2
 pathMnist: ../data/mnist
 
 # Path to model to load
-pathModel: ../out/
+pathModel: ../out/2020-02-17_13-15-04_dataset-correlated2_nrruns-100_net.p

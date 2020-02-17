@@ -4,4 +4,4 @@
 folderOut: ../out
 
 # Model to load
-pathModel: ../out/2020-02-14_14-56-57_dataset-correlated2_nrruns-100_net.p
+pathModel: ../out/2020-02-17_13-15-04_dataset-correlated2_nrruns-100_net.p
