@@ -39,12 +39,6 @@ def main():
     except yaml.YAMLError as exc:
         print(exc)
         raise
-    if not 'folderOut' in config:
-        raise ValueError('folderOut not specified in config file. Exiting.')
-    configFolderOut = str(config['folderOut'])
-    if not 'pathTemplate' in config:
-        raise ValueError('pathTemplate not specified in config file. Exiting.')
-    configPathTemplate = str(config['pathTemplate'])
     if not 'pathMnist' in config:
         raise ValueError('pathMnist not specified in config file. Exiting.')
     configPathMnist = str(config['pathMnist'])
@@ -59,12 +53,12 @@ def main():
     C = 10
 
     # Class initialization
-    cAcm = acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
+    cAcm = acm.Acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
 
-    # Run training
+    # Load model
     cAcm.load(configPathModel)
 
-    # Print statistics
+    # Test on Mnist set
     cAcm.testMnist()
 
 

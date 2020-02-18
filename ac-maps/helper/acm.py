@@ -295,7 +295,7 @@ class Acm:
 
         # Load data
         self.mnistTrain = np.loadtxt(filenameTraining, delimiter=",")
-        self.mnsitTest = np.loadtxt(filenameTest, delimiter=",") 
+        self.mnistTest = np.loadtxt(filenameTest, delimiter=",") 
 
 
 
@@ -464,19 +464,83 @@ class Acm:
             assert np.amax(mIn) <= 1, 'Training sample holds data >1: ' + str(mIn)
 
             # 1. v
-            mHidden = np.multiply(mIn, self.vMean)
+            mHidden = np.multiply(mIn, self.vFinal[-1])
 
             # 2. w
-            mOut = np.matmul(w, mHidden)
+            mOut = np.matmul(self.wFinal[-1], mHidden)
 
             # Sum up results
-            data[cnt][2] = np.sum(mOut)
-        for x in data:
-            if data[1] == 1:
-                print(x[1], x[2])
-        for x in data:
-            if not data[1] == 1:
-                print(x[1], x[2])
+            if np.sum(mOut) > 8000000:
+                data[cnt][2] = 1
+            else:
+                data[cnt][2] = 0
+
+
+        # Compute statistics
+
+        # Evaluate 1 vs all
+        # This treats label 1 as 1, and label 0, 2, 3, 4, ... as 0
+        tp = 0
+        tn = 0
+        fp = 0
+        fn = 0
+        for [vector, label, labelPrediction] in data:
+            # Get label
+            if label == 1:
+                pass
+            else:
+                label = 0
+            if labelPrediction == 1:
+                pass
+            else:
+                labelPrediction = 0
+ 
+            if label == 1:
+                if labelPrediction == 1:
+                    tp += 1
+                else:
+                    fn += 1
+            else:
+                if labelPrediction == 1:
+                    fp += 1
+                else:
+                    tn += 1
+ 
+        # Confusion matrix
+        print('\n\n1 vs all results:\n  tp fp {0:6.0f} {1:6.0f}\n  fn tn {2:6.0f} {3:6.0f} '.format(
+                tp, fp,
+                fn, tn))
+ 
+        # Precision
+        precision = 0
+        if (tp + fp) == 0:
+            print('\n  Precision: {0}'.format('Division by zero'))
+        else:
+            precision = tp/(tp + fp)
+            print('\n  Precision: {0:2.4f}'.format(precision))
+ 
+        # Recall
+        recall = 0
+        if (tp + fp) == 0:
+            print('     Recall: {0}'.format('Division by zero'))
+        else:
+            recall = tp/(tp + fn)
+            print('     Recall: {0:2.4f}'.format(recall))
+ 
+        # F1-Score
+        f1score = 0
+        if (precision+recall) == 0:
+            print('   F1-Score: {0}'.format('Division by zero'))
+        else:
+            f1score = 2*precision*recall/(precision+recall)
+            print('   F1-Score: {0:2.4f}'.format(f1score))
+ 
+        # Accuracy
+        if (tp+fp+fn+tn) == 0:
+            print('   Accuracy: {0}'.format('Division by zero'))
+        else:
+            acc = (tp+tn)/(tp+fp+fn+tn)
+            print('   Accuracy: {0:2.4f}'.format(acc))
 
 
 

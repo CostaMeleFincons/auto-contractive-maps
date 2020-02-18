@@ -10,8 +10,6 @@ First, please have a look at the file `config.yaml` in `auto-contractive-maps/ac
 
 | Parameter | Description |
 |-----------|-------------|
-| `folderOut` | Specifies the output folder of all generated files.|
-| `pathTemplate` | Path to jinja2 template, which generates a gnuplot script for a heatmap of the weight matrix. |
 | `pathMnist` | Path to mnist dataset as csv file. |
 | `pathModel` | Path to model to load. |
 
@@ -21,4 +19,4 @@ MNIST dataset folder must contain `mnist_test.csv` and `mnist_train.csv`. Downlo
 
 The file `test.py` loads a trained net from `pathModel`.
 Afterwards, the testing set from the Mnist dataset is compared against the model.
-Results are placed in `folderOut`.
+Statistics are printed to std::out.
