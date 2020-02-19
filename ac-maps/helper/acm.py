@@ -667,7 +667,7 @@ class Acm:
         filenamePickle = os.path.join(_folderOut, filename + '_net.p')
 
         # Save weights of last run
-        self.writeFile(filenameWeights, np.around(self.w, decimals=3))
+        self.writeFile(filenameWeights, np.around(self.w, decimals=3), _header=['#i', 'j', 'Weight'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -677,14 +677,15 @@ class Acm:
                 filenameWeightsTex=filenameWeightsTex,
                 filenameWeights=os.path.basename(filenameWeights),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange=str(int(np.amin(self.w))) + ':' + str(int(np.amax(self.w))+1))
+                cbrange=str(int(np.amin(self.w))) + ':' + str(int(np.amax(self.w))+1),
+                using='1:2:(sprintf("%.2f",$3))')
 
         fp = open(filenameWeightsPlot, 'w')
         fp.write(script)
         fp.close()
 
         # Save weights mean
-        self.writeFile(filenameWeightsMean, np.around(self.wMean, decimals=3))
+        self.writeFile(filenameWeightsMean, np.around(self.wMean, decimals=3), np.around(self.wStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -694,7 +695,8 @@ class Acm:
                 filenameWeightsTex=filenameWeightsMeanTex,
                 filenameWeights=os.path.basename(filenameWeightsMean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange=str(int(np.amin(self.wMean)*10)/10) + ':' + str(int(np.amax(self.wMean)*10)/10+0.1))
+                cbrange=str(int(np.amin(self.wMean)*10)/10) + ':' + str(int(np.amax(self.wMean)*10)/10+0.1),
+                using='1:2:(sprintf("$%.2f \pm %.2f$", $3, $4))')
 
         fp = open(filenameWeightsMeanPlot, 'w')
         fp.write(script)
@@ -725,7 +727,7 @@ class Acm:
         plt.clf()
 
         # PCA of last run
-        self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=3))
+        self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=3), _header=['#i', 'j', 'ExplainedVariance'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -735,7 +737,7 @@ class Acm:
                 filenamePcaTex=filenamePcaTex,
                 filenamePca=os.path.basename(filenamePca),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                using='1',
+                using='3',
                 errorbars='')
 
         fp = open(filenamePcaPlot, 'w')
@@ -743,7 +745,7 @@ class Acm:
         fp.close()
 
         # PCA mean
-        self.writeFile(filenamePcaMean, np.stack((np.around(self.pcaExplainedVarMean, decimals=3), np.around(self.pcaExplainedVarStd, decimals=3)), axis=1 ))
+        self.writeFile(filenamePcaMean, np.around(self.pcaExplainedVarMean, decimals=3), _data2=np.around(self.pcaExplainedVarStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -753,7 +755,7 @@ class Acm:
                 filenamePcaTex=filenamePcaMeanTex,
                 filenamePca=os.path.basename(filenamePcaMean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                using='1:2',
+                using='3:4',
                 errorbars='errorbars gap 2 lw 3')
 
         fp = open(filenamePcaMeanPlot, 'w')
@@ -765,7 +767,7 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][0]
-        self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=3))
+        self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=3), _header=['#i', 'j', 'r1'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -775,7 +777,8 @@ class Acm:
                 filenameWeightsTex=filenamePearsonrTex,
                 filenameWeights=os.path.basename(filenamePearsonr),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange='-1:1')
+                cbrange='-1:1',
+                using='1:2:(sprintf("%.2f",$3))')
 
         fp = open(filenamePearsonrPlot, 'w')
         fp.write(script)
@@ -786,7 +789,11 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrMean[i][j] = self.pearsonrMean[i][j][0]
-        self.writeFile(filenamePearsonrMean, np.around(pearsonrMean, decimals=3))
+        pearsonrStd = np.zeros((self.N, self.N), dtype=float)
+        for i in range(self.N):
+            for j in range(self.N):
+                pearsonrStd[i][j] = self.pearsonrStd[i][j][0]
+        self.writeFile(filenamePearsonrMean, np.around(pearsonrMean, decimals=3), np.around(pearsonrStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -796,7 +803,8 @@ class Acm:
                 filenameWeightsTex=filenamePearsonrMeanTex,
                 filenameWeights=os.path.basename(filenamePearsonrMean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange='-1:1')
+                cbrange='-1:1',
+                using='1:2:(sprintf("$%.2f \pm %.2f$", $3, $4))')
 
         fp = open(filenamePearsonrMeanPlot, 'w')
         fp.write(script)
@@ -807,7 +815,7 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][1]
-        self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=3))
+        self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=3), _header=['#i', 'j', 'r2'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -817,7 +825,8 @@ class Acm:
                 filenameWeightsTex=filenamePearsonr2Tex,
                 filenameWeights=os.path.basename(filenamePearsonr2),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange='-1:1')
+                cbrange='-1:1',
+                using='1:2:(sprintf("%.2f",$3))')
 
         fp = open(filenamePearsonr2Plot, 'w')
         fp.write(script)
@@ -828,7 +837,11 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrMean[i][j] = self.pearsonrMean[i][j][1]
-        self.writeFile(filenamePearsonr2Mean, np.around(pearsonrMean, decimals=3))
+        pearsonrStd = np.zeros((self.N, self.N), dtype=float)
+        for i in range(self.N):
+            for j in range(self.N):
+                pearsonrStd[i][j] = self.pearsonrStd[i][j][1]
+        self.writeFile(filenamePearsonr2Mean, np.around(pearsonrMean, decimals=3), np.around(pearsonrStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -838,7 +851,8 @@ class Acm:
                 filenameWeightsTex=filenamePearsonr2MeanTex,
                 filenameWeights=os.path.basename(filenamePearsonr2Mean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange='-1:1')
+                cbrange='-1:1',
+                using='1:2:(sprintf("$%.2f \pm %.2f$", $3, $4))')
 
         fp = open(filenamePearsonr2MeanPlot, 'w')
         fp.write(script)
@@ -902,20 +916,21 @@ class Acm:
 
 
 
-    def writeFile(self, _filename, _data, _header=None, _debug=False):
+    def writeFile(self, _filename, _data1, _data2=None, _header=None):
         ''' Write data to file.
             If header is given, it is stored before data.
+            File looks like:
+            [header]
+            i j _data[i][j] _data2[i][j]
 
             Arguments:
                 _filename (str): Full path to file.
-                _data (List): List of data.
+                _data1 (List): List of data.
+                _data2 (List): List of data. Must be of same shape as _data1.
                 _header=None (List): 1d list for header information.
-                _debug=False (bool): Turn debug output for this class on/off. Can also be set by self.debug=True/False.
         '''
-        self.debug = _debug
 
         # Saving to file
-        if self.debug: print('Saving to file ' + str(_filename))
         fp = open(_filename, 'w')
         if _header:
             headerStr = ''
@@ -923,19 +938,23 @@ class Acm:
                 headerStr += str(datum) + '\t'
             headerStr += '\n'
             fp.write(headerStr)
-        for datum in _data:
-            datumStr = ''
-            cnt = 0
-            if isinstance(datum, float) or \
-                    isinstance(datum, int) or \
-                    isinstance(datum, str):
-                datumStr += str(datum)
+
+        datumStr = ''
+        for i in range(len(_data1)):
+            idatum = _data1[i]
+            if isinstance(idatum, float) or \
+                    isinstance(idatum, int) or \
+                    isinstance(idatum, str):
+                datumStr += str(i) + '\t0\t' + str(idatum)
+                if not _data2 is None:
+                    datumStr += '\t' + str(_data2[i])
+                datumStr += '\n'
             else:
-                for value in datum:
-                    datumStr += str(value)
-                    if cnt < len(datum)-1:
-                        datumStr += '\t'
-                    cnt += 1
-            datumStr += '\n'
-            fp.write(datumStr)
+                for j in range(len(_data1[i])):
+                    jdatum = _data1[i][j]
+                    datumStr += str(i) + '\t' + str(j) + '\t' + str(jdatum)
+                    if not _data2 is None:
+                        datumStr += '\t' + str(_data2[i][j])
+                    datumStr += '\n'
+        fp.write(datumStr)
         fp.close()

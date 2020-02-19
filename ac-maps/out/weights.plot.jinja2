@@ -14,7 +14,7 @@ set xrange [{{ range }}] noreverse nowriteback
 set yrange [{{ range }}] reverse nowriteback
 
 unset key
-
+set rmargin 15
 set style data lines
 
 set tic scale 0
@@ -28,8 +28,8 @@ set cbrange [{{ cbrange }}]
 #set cblabel 'Weight'
 set cblabel ''
 
-set view map
-splot '{{ filenameWeights }}' matrix with image
+plot '{{ filenameWeights }}' with image, \
+'{{ filenameWeights }}' using {{ using }} with labels
 
 set terminal tikz plotsize 9,6
 set output '{{ filenameWeightsTex }}'
