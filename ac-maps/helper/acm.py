@@ -19,6 +19,8 @@ from datetime import datetime
 import os
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import random
 import pickle
 import networkx as nx
@@ -79,6 +81,9 @@ class Acm:
         # MRG
         self.mrgFinal = []
 
+        # PCA
+        self.pcaFinal = []
+
         # Reset
         self.resetNN()
 
@@ -108,6 +113,8 @@ class Acm:
         self.wStd = np.zeros((self.N, self.N), dtype=float)
         self.vMean = np.zeros((1, self.N), dtype=float)[0]
         self.vStd = np.zeros((1, self.N), dtype=float)[0]
+        self.pcaExplainedVarMean = np.zeros((1, self.N), dtype=float)[0]
+        self.pcaExplainedVarStd = np.zeros((1, self.N), dtype=float)[0]
 
 
 
@@ -351,7 +358,7 @@ class Acm:
                     break
                 if self.dataset == 'mnist':
                     print(cntNr, cnt, np.mean(self.mOut), minOut, maxOut)
- 
+
             # Append results
             if successfull:
                 self.mstFinal.append(minimum_spanning_tree(self.w))
@@ -359,6 +366,7 @@ class Acm:
                 self.cntFinal.append(cnt)
                 self.wFinal.append(self.w)
                 self.vFinal.append(self.v)
+                self.pcaFinal.append(self.runPca())
 
             cntNr += 1
 
@@ -379,6 +387,27 @@ class Acm:
                 row.append(self.vFinal[k][i])
             self.vMean[i] = np.mean(row)
             self.vStd[i] = np.std(row)
+
+        # PCA explained variance
+        for i in range(self.N):
+            row = []
+            for k in range(len(self.cntFinal)):
+                row.append(self.pcaFinal[k].explained_variance_ratio_[i])
+            self.pcaExplainedVarMean[i] = np.mean(row)
+            self.pcaExplainedVarStd[i] = np.std(row)
+
+
+
+    def runPca(self):
+        ''' Computes a PCA on the training data.
+
+            Returns:
+                (sklearn.decomposition.PCA). PCA
+        '''
+        trainXStd = StandardScaler().fit_transform(self.training)
+        pca = PCA(n_components=self.N, svd_solver='full')
+        pca.fit(trainXStd)
+        return pca
 
 
 
@@ -421,8 +450,8 @@ class Acm:
 
         print('Highest H score of Mean weights w: ' + str(self.cMrg.computeMrg(self.wMean)[1]))
 
-        print('Mean weights w: ' + str(self.wMean))
-        print('Std weights w: ' + str(self.wStd))
+        #print('Mean weights w: ' + str(self.wMean))
+        #print('Std weights w: ' + str(self.wStd))
 
         print('Mean weights w: ' + str(np.mean(self.wMean)))
         print('Std weights w: ' + str(np.std(self.wStd)))
@@ -589,6 +618,14 @@ class Acm:
         filenameGraphMstMean = os.path.join(_folderOut, filename + '_mstmean.png')
         filenameGraphMrg = os.path.join(_folderOut, filename + '_mrg.png')
         filenameGraphMrgMean = os.path.join(_folderOut, filename + '_mrgmean.png')
+        filenamePca = os.path.join(_folderOut, filename + '_pca.txt')
+        filenamePcaPlot = os.path.join(_folderOut, filename + '_pca.plot')
+        filenamePcaPng = os.path.join(_folderOut, filename + '_pca.png')
+        filenamePcaTex = os.path.join(_folderOut, filename + '_pca.tex')
+        filenamePcaMean = os.path.join(_folderOut, filename + '_pcamean.txt')
+        filenamePcaMeanPlot = os.path.join(_folderOut, filename + '_pcamean.plot')
+        filenamePcaMeanPng = os.path.join(_folderOut, filename + '_pcamean.png')
+        filenamePcaMeanTex = os.path.join(_folderOut, filename + '_pcamean.tex')
         filenamePickle = os.path.join(_folderOut, filename + '_net.p')
 
         # Save weights of last run
@@ -649,6 +686,43 @@ class Acm:
                 orientation='portrait')
         plt.clf()
 
+        # PCA of last run
+        print(self.pcaFinal[-1].explained_variance_ratio_)
+        self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=3))
+
+        # Create gnuplot scripts from jinja2 template of last run
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('pca.plot.jinja2')
+        script = template.render(filenamePcaPng=filenamePcaPng, 
+                filenamePcaTex=filenamePcaTex,
+                filenamePca=os.path.basename(filenamePca),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                using='1',
+                errorbars='')
+
+        fp = open(filenamePcaPlot, 'w')
+        fp.write(script)
+        fp.close()
+
+        # PCA mean
+        self.writeFile(filenamePcaMean, np.stack((np.around(self.pcaExplainedVarMean, decimals=3), np.around(self.pcaExplainedVarStd, decimals=3)), axis=1 ))
+
+        # Create gnuplot scripts from jinja2 template mean
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('pca.plot.jinja2')
+        script = template.render(filenamePcaPng=filenamePcaMeanPng, 
+                filenamePcaTex=filenamePcaMeanTex,
+                filenamePca=os.path.basename(filenamePcaMean),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                using='1:2',
+                errorbars='errorbars gap 2 lw 3')
+
+        fp = open(filenamePcaMeanPlot, 'w')
+        fp.write(script)
+        fp.close()
+
         # Save all weights
         saveNet = {}
         saveNet['N'] = self.N
@@ -661,10 +735,14 @@ class Acm:
         saveNet['vFinal'] = self.vFinal
         saveNet['mstFinal'] = self.mstFinal
         saveNet['mrgFinal'] = self.mrgFinal
+        saveNet['pcaFinal'] = self.pcaFinal
         saveNet['wMean'] = self.wMean
         saveNet['wStd'] = self.wStd
         saveNet['vMean'] = self.vMean
         saveNet['vStd'] = self.vStd
+        saveNet['training'] = self.training
+        saveNet['pcaExplainedVarMean'] = self.pcaExplainedVarMean
+        saveNet['pcaExplainedVarStd'] = self.pcaExplainedVarStd
         pickle.dump(saveNet, open(filenamePickle, "wb" ))
 
 
@@ -684,10 +762,14 @@ class Acm:
             self.vFinal = saveNet['vFinal']
             self.mstFinal = saveNet['mstFinal']
             self.mrgFinal = saveNet['mrgFinal']
+            self.pcaFinal = saveNet['pcaFinal']
             self.wMean = saveNet['wMean']
             self.wStd = saveNet['wStd']
             self.vMean = saveNet['vMean']
             self.vStd = saveNet['vStd']
+            self.training = saveNet['training']
+            self.pcaExplainedVarMean = saveNet['pcaExplainedVarMean']
+            self.pcaExplainedVarStd = saveNet['pcaExplainedVarStd']
         except:
             print('Could not load file: ' + str(_pathPickle))
 
@@ -717,11 +799,16 @@ class Acm:
         for datum in _data:
             datumStr = ''
             cnt = 0
-            for value in datum:
-                datumStr += str(value)
-                if cnt < len(datum)-1:
-                    datumStr += '\t'
-                cnt += 1
+            if isinstance(datum, float) or \
+                    isinstance(datum, int) or \
+                    isinstance(datum, str):
+                datumStr += str(datum)
+            else:
+                for value in datum:
+                    datumStr += str(value)
+                    if cnt < len(datum)-1:
+                        datumStr += '\t'
+                    cnt += 1
             datumStr += '\n'
             fp.write(datumStr)
         fp.close()
