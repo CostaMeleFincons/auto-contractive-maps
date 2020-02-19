@@ -19,6 +19,7 @@ from datetime import datetime
 import os
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree
+from scipy.stats import pearsonr
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import random
@@ -84,6 +85,9 @@ class Acm:
         # PCA
         self.pcaFinal = []
 
+        # PCA
+        self.pearsonrFinal = []
+
         # Reset
         self.resetNN()
 
@@ -115,6 +119,8 @@ class Acm:
         self.vStd = np.zeros((1, self.N), dtype=float)[0]
         self.pcaExplainedVarMean = np.zeros((1, self.N), dtype=float)[0]
         self.pcaExplainedVarStd = np.zeros((1, self.N), dtype=float)[0]
+        self.pearsonrMean = np.zeros((self.N, self.N, 2), dtype=float)
+        self.pearsonrStd = np.zeros((self.N, self.N, 2), dtype=float)
 
 
 
@@ -367,6 +373,13 @@ class Acm:
                 self.wFinal.append(self.w)
                 self.vFinal.append(self.v)
                 self.pcaFinal.append(self.runPca())
+                # Compute Pearson's r
+                pearsonrData = np.array(self.training[0:cnt]).T
+                pearsonrOut = np.zeros((self.N, self.N, 2), dtype=float)
+                for i in range(self.N):
+                    for j in range(self.N):
+                        pearsonrOut[i][j] = pearsonr(pearsonrData[i], pearsonrData[j])
+                self.pearsonrFinal.append(pearsonrOut)
 
             cntNr += 1
 
@@ -395,6 +408,17 @@ class Acm:
                 row.append(self.pcaFinal[k].explained_variance_ratio_[i])
             self.pcaExplainedVarMean[i] = np.mean(row)
             self.pcaExplainedVarStd[i] = np.std(row)
+
+        # Pearson's r
+        for i in range(self.N):
+            for j in range(self.N):
+                row0 = []
+                row1 = []
+                for k in range(len(self.cntFinal)):
+                    row0.append(self.pearsonrFinal[k][i][j][0])
+                    row1.append(self.pearsonrFinal[k][i][j][1])
+                self.pearsonrMean[i][j] = [np.mean(row0), np.mean(row1)]
+                self.pearsonrStd[i][j] = [np.std(row0), np.std(row1)]
 
 
 
@@ -594,8 +618,6 @@ class Acm:
 
 
 
-
-
     def save(self, _folderOut, _pathTemplate):
         ''' This function saves all results to file.
 
@@ -626,6 +648,22 @@ class Acm:
         filenamePcaMeanPlot = os.path.join(_folderOut, filename + '_pcamean.plot')
         filenamePcaMeanPng = os.path.join(_folderOut, filename + '_pcamean.png')
         filenamePcaMeanTex = os.path.join(_folderOut, filename + '_pcamean.tex')
+        filenamePearsonr = os.path.join(_folderOut, filename + '_pearsonr.txt')
+        filenamePearsonrPlot = os.path.join(_folderOut, filename + '_pearsonr.plot')
+        filenamePearsonrPng = os.path.join(_folderOut, filename + '_pearsonr.png')
+        filenamePearsonrTex = os.path.join(_folderOut, filename + '_pearsonr.tex')
+        filenamePearsonrMean = os.path.join(_folderOut, filename + '_pearsonrmean.txt')
+        filenamePearsonrMeanPlot = os.path.join(_folderOut, filename + '_pearsonrmean.plot')
+        filenamePearsonrMeanPng = os.path.join(_folderOut, filename + '_pearsonrmean.png')
+        filenamePearsonrMeanTex = os.path.join(_folderOut, filename + '_pearsonrmean.tex')
+        filenamePearsonr2 = os.path.join(_folderOut, filename + '_pearsonr2.txt')
+        filenamePearsonr2Plot = os.path.join(_folderOut, filename + '_pearsonr2.plot')
+        filenamePearsonr2Png = os.path.join(_folderOut, filename + '_pearsonr2.png')
+        filenamePearsonr2Tex = os.path.join(_folderOut, filename + '_pearsonr2.tex')
+        filenamePearsonr2Mean = os.path.join(_folderOut, filename + '_pearsonr2mean.txt')
+        filenamePearsonr2MeanPlot = os.path.join(_folderOut, filename + '_pearsonr2mean.plot')
+        filenamePearsonr2MeanPng = os.path.join(_folderOut, filename + '_pearsonr2mean.png')
+        filenamePearsonr2MeanTex = os.path.join(_folderOut, filename + '_pearsonr2mean.tex')
         filenamePickle = os.path.join(_folderOut, filename + '_net.p')
 
         # Save weights of last run
@@ -687,7 +725,6 @@ class Acm:
         plt.clf()
 
         # PCA of last run
-        print(self.pcaFinal[-1].explained_variance_ratio_)
         self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=3))
 
         # Create gnuplot scripts from jinja2 template of last run
@@ -723,6 +760,89 @@ class Acm:
         fp.write(script)
         fp.close()
 
+        # Pearson's r of last run
+        pearsonrMean = np.zeros((self.N, self.N), dtype=float)
+        for i in range(self.N):
+            for j in range(self.N):
+                pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][0]
+        self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=3))
+
+        # Create gnuplot scripts from jinja2 template of last run
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('weights.plot.jinja2')
+        script = template.render(filenameWeightsPng=filenamePearsonrPng, 
+                filenameWeightsTex=filenamePearsonrTex,
+                filenameWeights=os.path.basename(filenamePearsonr),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                cbrange='-1:1')
+
+        fp = open(filenamePearsonrPlot, 'w')
+        fp.write(script)
+        fp.close()
+
+        # Pearson's r mean
+        pearsonrMean = np.zeros((self.N, self.N), dtype=float)
+        for i in range(self.N):
+            for j in range(self.N):
+                pearsonrMean[i][j] = self.pearsonrMean[i][j][0]
+        self.writeFile(filenamePearsonrMean, np.around(pearsonrMean, decimals=3))
+
+        # Create gnuplot scripts from jinja2 template mean
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('weights.plot.jinja2')
+        script = template.render(filenameWeightsPng=filenamePearsonrMeanPng, 
+                filenameWeightsTex=filenamePearsonrMeanTex,
+                filenameWeights=os.path.basename(filenamePearsonrMean),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                cbrange='-1:1')
+
+        fp = open(filenamePearsonrMeanPlot, 'w')
+        fp.write(script)
+        fp.close()
+
+        # Pearson's r of last run 2
+        pearsonrMean = np.zeros((self.N, self.N), dtype=float)
+        for i in range(self.N):
+            for j in range(self.N):
+                pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][1]
+        self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=3))
+
+        # Create gnuplot scripts from jinja2 template of last run
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('weights.plot.jinja2')
+        script = template.render(filenameWeightsPng=filenamePearsonr2Png, 
+                filenameWeightsTex=filenamePearsonr2Tex,
+                filenameWeights=os.path.basename(filenamePearsonr2),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                cbrange='-1:1')
+
+        fp = open(filenamePearsonr2Plot, 'w')
+        fp.write(script)
+        fp.close()
+
+        # Pearson's r mean 2
+        pearsonrMean = np.zeros((self.N, self.N), dtype=float)
+        for i in range(self.N):
+            for j in range(self.N):
+                pearsonrMean[i][j] = self.pearsonrMean[i][j][1]
+        self.writeFile(filenamePearsonr2Mean, np.around(pearsonrMean, decimals=3))
+
+        # Create gnuplot scripts from jinja2 template mean
+        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('weights.plot.jinja2')
+        script = template.render(filenameWeightsPng=filenamePearsonr2MeanPng, 
+                filenameWeightsTex=filenamePearsonr2MeanTex,
+                filenameWeights=os.path.basename(filenamePearsonr2Mean),
+                range=str(-0.5) + ':' + str(self.N-1+0.5),
+                cbrange='-1:1')
+
+        fp = open(filenamePearsonr2MeanPlot, 'w')
+        fp.write(script)
+        fp.close()
         # Save all weights
         saveNet = {}
         saveNet['N'] = self.N
@@ -743,6 +863,9 @@ class Acm:
         saveNet['training'] = self.training
         saveNet['pcaExplainedVarMean'] = self.pcaExplainedVarMean
         saveNet['pcaExplainedVarStd'] = self.pcaExplainedVarStd
+        saveNet['pearsonrMean'] = self.pearsonrMean
+        saveNet['pearsonrStd'] = self.pearsonrStd
+        saveNet['pearsonrFinal'] = self.pearsonrFinal
         pickle.dump(saveNet, open(filenamePickle, "wb" ))
 
 
@@ -770,6 +893,10 @@ class Acm:
             self.training = saveNet['training']
             self.pcaExplainedVarMean = saveNet['pcaExplainedVarMean']
             self.pcaExplainedVarStd = saveNet['pcaExplainedVarStd']
+            self.pearsonr = saveNet['pearsonr']
+            self.pearsonrMean = saveNet['pearsonrMean']
+            self.pearsonrStd = saveNet['pearsonrStd']
+            self.pearsonrFinal = saveNet['pearsonrFinal']
         except:
             print('Could not load file: ' + str(_pathPickle))
 
