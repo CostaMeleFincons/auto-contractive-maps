@@ -15,4 +15,4 @@ First, please have a look at the file `config.yaml` in `auto-contractive-maps/ac
 
 ## Running
 
-The file `createdatasets.py` will place 1000 samples of each  training set `random`, `correlated1`, and `correlated2` in the output folder.
+The file `createdatasets.py` will place 1000 samples of each  training set `random`, `correlated1`, and `correlated2` in a subfolder in the output folder.

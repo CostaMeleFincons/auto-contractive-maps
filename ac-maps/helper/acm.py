@@ -979,8 +979,17 @@ class Acm:
         date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = str(date) + '_dataset-' + str(self.dataset)
 
+        # Create folder
+        folderOut = os.path.join(_folderOut, self.dataset)
+        if not os.path.isdir(folderOut):
+            try:
+                os.mkdir(folderOut)
+            except OSError:
+                print ("Creation of the directory %s failed" % folderOut)
+
+
         if _nr is None:
-            filenameOut = os.path.join(_folderOut, filename + '.nnv')
+            filenameOut = os.path.join(folderOut, filename + '.nnv')
          
             # Create data, if dataset is empty
             if len(self.training) == 1:
@@ -995,7 +1004,7 @@ class Acm:
         else:
             for cnt in range(abs(_nr)):
                 filenameOut = filename + '_nr-' + str(cnt)
-                filenameOut = os.path.join(_folderOut, filenameOut + '.nnv')
+                filenameOut = os.path.join(folderOut, filenameOut + '.nnv')
              
                 # Create data
                 self.createDataset()

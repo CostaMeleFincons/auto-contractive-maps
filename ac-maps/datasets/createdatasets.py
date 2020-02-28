@@ -47,7 +47,7 @@ def main():
     numSamples = 1000
 
     # Class initialization
-    for dataset in ['random', 'correlated1', 'correlated2', 'correlated3']:
+    for dataset in ['random', 'correlated1', 'correlated2']:
         cAcm = acm.Acm(10, 1, _dataset=dataset)
         cAcm.saveDataset(configFolderDatasetOut, _nr=1000)
 
