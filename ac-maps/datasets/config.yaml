@@ -1,0 +1,4 @@
+# Path to output folder. 
+# May be relative to this one.
+# All output files will be stored here
+folderDatasetOut: ../data

@@ -22,15 +22,16 @@ from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.stats import pearsonr
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-import random
 import pickle
 import networkx as nx
 import matplotlib.pyplot as plt
 import jinja2
+import csv
 
 import sys
 sys.path.insert(0, '../helper')
 import mrg
+
 
 
 class Acm:
@@ -311,6 +312,23 @@ class Acm:
         self.mnistTest = np.loadtxt(filenameTest, delimiter=",") 
 
 
+    def createDataset(self):
+        ''' This function loads a dataset based on the self.dataset.
+        '''
+        if self.dataset == 'random':
+            self.createTrainingRandom()
+        elif self.dataset == 'correlated1':
+            self.createTrainingCorrelated1()
+        elif self.dataset == 'correlated2':
+            self.createTrainingCorrelated2()
+        elif self.dataset == 'correlated3':
+            self.createTrainingCorrelated3()
+        elif self.dataset == 'mnist':
+            self.createTrainingMnist()
+        else:
+            raise ValueError('No dataset specified.')
+
+
 
     def run(self, _nr=1):
         ''' This function trains the map given the training samples in self.training.
@@ -327,18 +345,7 @@ class Acm:
             self.resetNN()
 
             # Create training samples
-            if self.dataset == 'random':
-                self.createTrainingRandom()
-            elif self.dataset == 'correlated1':
-                self.createTrainingCorrelated1()
-            elif self.dataset == 'correlated2':
-                self.createTrainingCorrelated2()
-            elif self.dataset == 'correlated3':
-                self.createTrainingCorrelated3()
-            elif self.dataset == 'mnist':
-                self.createTrainingMnist()
-            else:
-                raise ValueError('No dataset specified.')
+            self.createDataset()
 
             # Runtime counter
             cnt = 0
@@ -958,3 +965,44 @@ class Acm:
                     datumStr += '\n'
         fp.write(datumStr)
         fp.close()
+
+
+
+    def saveDataset(self, _folderOut, _nr=None):
+        ''' This function saves the used dataset to file.
+
+            Arguments:
+                _folderOut (str): All output files will be placed in this folder.
+                _nr=None: How many datasets should be created. If set to None, current dataset is stored.
+        '''
+        # Filenames
+        date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        filename = str(date) + '_dataset-' + str(self.dataset)
+
+        if _nr is None:
+            filenameOut = os.path.join(_folderOut, filename + '.nnv')
+         
+            # Create data, if dataset is empty
+            if len(self.training) == 1:
+                self.createDataset()
+         
+            # Store to file
+            with open(filenameOut, 'w', newline='') as csvfile:
+                w = csv.writer(csvfile, delimiter='\t', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+                w.writerow(self.label)
+                for row in self.training:
+                    w.writerow(row)
+        else:
+            for cnt in range(abs(_nr)):
+                filenameOut = filename + '_nr-' + str(cnt)
+                filenameOut = os.path.join(_folderOut, filenameOut + '.nnv')
+             
+                # Create data
+                self.createDataset()
+             
+                # Store to file
+                with open(filenameOut, 'w', newline='') as csvfile:
+                    w = csv.writer(csvfile, delimiter='\t', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+                    w.writerow(self.label)
+                    for row in self.training:
+                       w.writerow(row)
