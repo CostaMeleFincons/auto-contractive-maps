@@ -38,14 +38,14 @@ class Acm:
     ''' This class implements an Auto Contractive Map.
     '''
 
-    def __init__(self, _inputLength, _contraction, _dataset, _pathMnist=None):
+    def __init__(self, _inputLength, _contraction, _dataset, _pathDataset=None):
         ''' Initialization function.
 
             Arguments:
                 _inputLength (int): Length of input vector
                 _contraction (float): Contraction parameter, _contraction>1.
                 _dataset (str): Name of dataset to use: 'random', 'correlated1', 'correlated2', 'correlated3', or 'mnist'.
-                _pathMnist=None (str): Path to MNIST dataset as csv file. Must contain mnist_test.csv and mnist_train.csv.
+                _pathDataset=None (str): Path to dataset folders.
         '''
 
         # Length of input vector
@@ -55,7 +55,7 @@ class Acm:
         self.C = _contraction
 
         # Path to MNIST dataset
-        self.pathMnist = _pathMnist
+        self.pathDataset = _pathDataset
 
         # Dataset to use
         self.dataset = _dataset
@@ -298,10 +298,10 @@ class Acm:
         ''' This function loads the mnist dataset from file.
         '''
         # Filename checks
-        filenameTraining = os.path.join(self.pathMnist, 'mnist_train.csv')
-        filenameTest = os.path.join(self.pathMnist, 'mnist_test.csv')
-        if not os.path.isdir(self.pathMnist):
-            raise ValueError('Folder not found: ' + str(self.pathMnist))
+        filenameTraining = os.path.join(self.pathDataset, 'mnist_train.csv')
+        filenameTest = os.path.join(self.pathDataset, 'mnist_test.csv')
+        if not os.path.isdir(self.pathDataset):
+            raise ValueError('Folder not found: ' + str(self.pathDataset))
         if not os.path.isfile(filenameTraining):
             raise ValueError('File not found: ' + str(filenameTraining))
         if not os.path.isfile(filenameTest):
@@ -312,21 +312,28 @@ class Acm:
         self.mnistTest = np.loadtxt(filenameTest, delimiter=",") 
 
 
-    def createDataset(self):
+
+    def createDataset(self, nr=None):
         ''' This function loads a dataset based on the self.dataset.
+
+            Arguments:
+                _nr (int): Number of dataset to load _nr >= 1. This is only used, if self.pathDataset != None.
         '''
-        if self.dataset == 'random':
-            self.createTrainingRandom()
-        elif self.dataset == 'correlated1':
-            self.createTrainingCorrelated1()
-        elif self.dataset == 'correlated2':
-            self.createTrainingCorrelated2()
-        elif self.dataset == 'correlated3':
-            self.createTrainingCorrelated3()
-        elif self.dataset == 'mnist':
-            self.createTrainingMnist()
+        if self.pathDataset is None:
+            if self.dataset == 'random':
+                self.createTrainingRandom()
+            elif self.dataset == 'correlated1':
+                self.createTrainingCorrelated1()
+            elif self.dataset == 'correlated2':
+                self.createTrainingCorrelated2()
+            elif self.dataset == 'correlated3':
+                self.createTrainingCorrelated3()
+            elif self.dataset == 'mnist':
+                self.createTrainingMnist()
+            else:
+                raise ValueError('No dataset specified.')
         else:
-            raise ValueError('No dataset specified.')
+            self.loadDataset(self.pathDataset, nr)
 
 
 
@@ -345,7 +352,7 @@ class Acm:
             self.resetNN()
 
             # Create training samples
-            self.createDataset()
+            self.createDataset(cntNr)
 
             # Runtime counter
             cnt = 0
@@ -632,6 +639,9 @@ class Acm:
                 _folderOut (str): All output files will be placed in this folder.
                 _pathTemplate (str): Path to jinja2 template for gnuplot weight heat map.
         '''
+        # Precision for data when saved
+        precision = 4
+
         # Filenames
         date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = str(date) + '_dataset-' + str(self.dataset) + '_nrruns-' + str(len(self.cntFinal))
@@ -674,7 +684,7 @@ class Acm:
         filenamePickle = os.path.join(_folderOut, filename + '_net.p')
 
         # Save weights of last run
-        self.writeFile(filenameWeights, np.around(self.w, decimals=3), _header=['#i', 'j', 'Weight'])
+        self.writeFile(filenameWeights, np.around(self.w, decimals=precision), _header=['#i', 'j', 'Weight'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -685,14 +695,14 @@ class Acm:
                 filenameWeights=os.path.basename(filenameWeights),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
                 cbrange=str(int(np.amin(self.w))) + ':' + str(int(np.amax(self.w))+1),
-                using='1:2:(sprintf("%.2f",$3))')
+                using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
 
         fp = open(filenameWeightsPlot, 'w')
         fp.write(script)
         fp.close()
 
         # Save weights mean
-        self.writeFile(filenameWeightsMean, np.around(self.wMean, decimals=3), np.around(self.wStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
+        self.writeFile(filenameWeightsMean, np.around(self.wMean, decimals=precision), np.around(self.wStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -703,7 +713,7 @@ class Acm:
                 filenameWeights=os.path.basename(filenameWeightsMean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
                 cbrange=str(int(np.amin(self.wMean)*10)/10) + ':' + str(int(np.amax(self.wMean)*10)/10+0.1),
-                using='1:2:(sprintf("$%.2f \pm %.2f$", $3, $4))')
+                using='1:2:(sprintf("\\\\tiny{$%.' + str(precision) + 'f \\\\pm %.' + str(precision) + 'f$}", $3, $4))')
 
         fp = open(filenameWeightsMeanPlot, 'w')
         fp.write(script)
@@ -734,7 +744,7 @@ class Acm:
         plt.clf()
 
         # PCA of last run
-        self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=3), _header=['#i', 'j', 'ExplainedVariance'])
+        self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=precision), _header=['#i', 'j', 'ExplainedVariance'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -752,7 +762,7 @@ class Acm:
         fp.close()
 
         # PCA mean
-        self.writeFile(filenamePcaMean, np.around(self.pcaExplainedVarMean, decimals=3), _data2=np.around(self.pcaExplainedVarStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
+        self.writeFile(filenamePcaMean, np.around(self.pcaExplainedVarMean, decimals=precision), _data2=np.around(self.pcaExplainedVarStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -774,7 +784,7 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][0]
-        self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=3), _header=['#i', 'j', 'r1'])
+        self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r1'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -785,7 +795,7 @@ class Acm:
                 filenameWeights=os.path.basename(filenamePearsonr),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
                 cbrange='-1:1',
-                using='1:2:(sprintf("%.2f",$3))')
+                using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
 
         fp = open(filenamePearsonrPlot, 'w')
         fp.write(script)
@@ -800,7 +810,7 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrStd[i][j] = self.pearsonrStd[i][j][0]
-        self.writeFile(filenamePearsonrMean, np.around(pearsonrMean, decimals=3), np.around(pearsonrStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
+        self.writeFile(filenamePearsonrMean, np.around(pearsonrMean, decimals=precision), np.around(pearsonrStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -811,7 +821,7 @@ class Acm:
                 filenameWeights=os.path.basename(filenamePearsonrMean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
                 cbrange='-1:1',
-                using='1:2:(sprintf("$%.2f \pm %.2f$", $3, $4))')
+                using='1:2:(sprintf("\\\\tiny{$%.' + str(precision) + 'f \\\\pm %.' + str(precision) + 'f$}", $3, $4))')
 
         fp = open(filenamePearsonrMeanPlot, 'w')
         fp.write(script)
@@ -822,7 +832,7 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][1]
-        self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=3), _header=['#i', 'j', 'r2'])
+        self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r2'])
 
         # Create gnuplot scripts from jinja2 template of last run
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -833,7 +843,7 @@ class Acm:
                 filenameWeights=os.path.basename(filenamePearsonr2),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
                 cbrange='-1:1',
-                using='1:2:(sprintf("%.2f",$3))')
+                using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
 
         fp = open(filenamePearsonr2Plot, 'w')
         fp.write(script)
@@ -848,7 +858,7 @@ class Acm:
         for i in range(self.N):
             for j in range(self.N):
                 pearsonrStd[i][j] = self.pearsonrStd[i][j][1]
-        self.writeFile(filenamePearsonr2Mean, np.around(pearsonrMean, decimals=3), np.around(pearsonrStd, decimals=3), _header=['#i', 'j', 'Mean', 'Std'])
+        self.writeFile(filenamePearsonr2Mean, np.around(pearsonrMean, decimals=precision), np.around(pearsonrStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
         templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
@@ -859,7 +869,7 @@ class Acm:
                 filenameWeights=os.path.basename(filenamePearsonr2Mean),
                 range=str(-0.5) + ':' + str(self.N-1+0.5),
                 cbrange='-1:1',
-                using='1:2:(sprintf("$%.2f \pm %.2f$", $3, $4))')
+                using='1:2:(sprintf("\\\\tiny{$%.' + str(precision) + 'f \\\\pm %.' + str(precision) + 'f$}", $3, $4))')
 
         fp = open(filenamePearsonr2MeanPlot, 'w')
         fp.write(script)
@@ -870,7 +880,7 @@ class Acm:
         saveNet['C'] = self.C
         saveNet['label'] = self.label
         saveNet['dataset'] = self.dataset
-        saveNet['pathMnist'] = self.pathMnist
+        saveNet['pathDataset'] = self.pathDataset
         saveNet['cntFinal'] = self.cntFinal
         saveNet['wFinal'] = self.wFinal
         saveNet['vFinal'] = self.vFinal
@@ -900,7 +910,7 @@ class Acm:
             self.C = saveNet['C']
             self.label= saveNet['label']
             self.dataset = saveNet['dataset']
-            self.pathMnist = saveNet['pathMnist']
+            self.pathDataset = saveNet['pathDataset']
             self.cntFinal = saveNet['cntFinal']
             self.wFinal = saveNet['wFinal']
             self.vFinal = saveNet['vFinal']
@@ -968,11 +978,11 @@ class Acm:
 
 
 
-    def saveDataset(self, _folderOut, _nr=None):
+    def saveDataset(self, _folder, _nr=None):
         ''' This function saves the used dataset to file.
 
             Arguments:
-                _folderOut (str): All output files will be placed in this folder.
+                _folder (str): All output files will be placed in this folder.
                 _nr=None: How many datasets should be created. If set to None, current dataset is stored.
         '''
         # Filenames
@@ -980,16 +990,16 @@ class Acm:
         filename = str(date) + '_dataset-' + str(self.dataset)
 
         # Create folder
-        folderOut = os.path.join(_folderOut, self.dataset)
-        if not os.path.isdir(folderOut):
+        folder = os.path.join(_folder, self.dataset)
+        if not os.path.isdir(folder):
             try:
-                os.mkdir(folderOut)
+                os.mkdir(folder)
             except OSError:
-                print ("Creation of the directory %s failed" % folderOut)
+                print ("Creation of the directory %s failed" % folder)
 
 
         if _nr is None:
-            filenameOut = os.path.join(folderOut, filename + '.nnv')
+            filenameOut = os.path.join(folder, filename + '.nnv')
          
             # Create data, if dataset is empty
             if len(self.training) == 1:
@@ -1004,7 +1014,7 @@ class Acm:
         else:
             for cnt in range(abs(_nr)):
                 filenameOut = filename + '_nr-' + str(cnt)
-                filenameOut = os.path.join(folderOut, filenameOut + '.nnv')
+                filenameOut = os.path.join(folder, filenameOut + '.nnv')
              
                 # Create data
                 self.createDataset()
@@ -1015,3 +1025,55 @@ class Acm:
                     w.writerow(self.label)
                     for row in self.training:
                        w.writerow(row)
+
+
+
+    def loadDataset(self, _folder, _nr=None):
+        ''' This function loads one dataset from file.
+
+            Arguments:
+                _folder (str): All output files will be placed in this folder.
+                _nr=None: If the dataset has a number '_nr-xxx', number xxx is loaded.
+        '''
+        # Load all files from dir
+        filelist = []
+        for filename in os.listdir(_folder):
+            filename = os.path.join(_folder, filename)
+            filelist.append(filename)
+        filelist = sorted(filelist)
+
+        # Search for file
+        filenameLoad = None
+        for filename in filelist:
+            foundDataset = False
+            foundNr = False
+            dataset = None
+            nr = None
+            splits = os.path.splitext(os.path.basename(filename))[0].split('_')
+            for split in splits:
+                if split[0:8] == 'dataset-':
+                    dataset = split[8:]
+                    foundDataset = True
+                if split[0:3] == 'nr-':
+                    if int(split[3:]) == _nr:
+                        nr = int(split[3:])
+                        foundNr = True
+
+            if _nr is None:
+                if foundDataset:
+                    filenameLoad = filename
+                    break
+            else:
+                if foundDataset and foundNr:
+                    filenameLoad = filename
+                    break
+
+        # Open file and add to self.training
+        data = []
+        with open(filenameLoad, newline='') as csvfile:
+            r = csv.reader(csvfile, delimiter='\t', quotechar='\"')
+            for row in r:
+                data.append(row)
+
+        self.label = data[0]
+        self.training = np.array(data[1:], dtype=float)

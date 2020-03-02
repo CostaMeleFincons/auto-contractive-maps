@@ -44,12 +44,12 @@ def main():
     configFolderDatasetOut = str(config['folderDatasetOut'])
 
     # Number of samples
-    numSamples = 1000
+    numSamples = 10
 
     # Class initialization
     for dataset in ['random', 'correlated1', 'correlated2']:
         cAcm = acm.Acm(10, 1, _dataset=dataset)
-        cAcm.saveDataset(configFolderDatasetOut, _nr=1000)
+        cAcm.saveDataset(configFolderDatasetOut, _nr=numSamples)
 
 
 

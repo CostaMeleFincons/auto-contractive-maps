@@ -45,22 +45,29 @@ def main():
     if not 'pathTemplate' in config:
         raise ValueError('pathTemplate not specified in config file. Exiting.')
     configPathTemplate = str(config['pathTemplate'])
-    if not 'pathMnist' in config:
-        raise ValueError('pathMnist not specified in config file. Exiting.')
-    configPathMnist = str(config['pathMnist'])
+    if not 'pathDataset' in config:
+        raise ValueError('pathDataset not specified in config file. Exiting.')
+    configPathDataset = str(config['pathDataset'])
 
     # Length of input vector
     N = 10
 
     # Contraction parameter
-    C = 2
+    C = 1000
 
     # Class initialization
-    #cAcm = acm.Acm(N, C, _dataset='random')
-    cAcm = acm.Acm(N, C, _dataset='correlated1')
-    #cAcm = acm.Acm(N, C, _dataset='correlated2')
-    #cAcm = acm.Acm(N, C, _dataset='correlated3')
-    #cAcm = acm.Acm(N, C, _dataset='mnist', _pathMnist=configPathMnist) # for MNIST choose N = 28*28 and C = 100
+    # If _pathDataset=None, data is not loaded from file, but generated on the fly.
+    #cAcm = acm.Acm(N, C, _dataset='random', _pathDataset=None)
+    #cAcm = acm.Acm(N, C, _dataset='correlated1', _pathDataset=None)
+    #cAcm = acm.Acm(N, C, _dataset='correlated2', _pathDataset=None)
+    #cAcm = acm.Acm(N, C, _dataset='correlated3', _pathDataset=None)
+    
+    # Data is loaded from file
+    #cAcm = acm.Acm(N, C, _dataset='random', _pathDataset=configPathDataset)
+    #cAcm = acm.Acm(N, C, _dataset='correlated1', _pathDataset=configPathDataset)
+    cAcm = acm.Acm(N, C, _dataset='correlated2', _pathDataset=configPathDataset)
+    #cAcm = acm.Acm(N, C, _dataset='correlated3', _pathDataset=configPathDataset)
+    #cAcm = acm.Acm(N, C, _dataset='mnist', _pathDataset=configPathDataset) # for MNIST choose N = 28*28 and C = 100
 
     # Run training
     cAcm.run(1000)
