@@ -1,0 +1,13 @@
+# Path to output folder. 
+# May be relative to this one.
+# All output files will be stored here
+folderOut: ../out
+
+# Gnuplot template
+# jinja2 template, which will create a heat map from the weights.
+pathTemplate: ../out/weights.plot.jinja2
+
+# Weights file to load
+#pathWeights: /home/sreich/git/ac-maps/ac-maps/data/CM_2020-02-28_16-06-20_dataset-random_nr-0.WTX
+#pathWeights: /home/sreich/git/ac-maps/ac-maps/data/CM_2020-02-28_16-06-37_dataset-correlated1_nr-0.WTX
+pathWeights: /home/sreich/git/ac-maps/ac-maps/data/CM_2020-02-28_16-07-08_dataset-correlated2_nr-0.WTX

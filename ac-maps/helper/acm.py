@@ -429,8 +429,15 @@ class Acm:
                 row0 = []
                 row1 = []
                 for k in range(len(self.cntFinal)):
-                    row0.append(self.pearsonrFinal[k][i][j][0])
-                    row1.append(self.pearsonrFinal[k][i][j][1])
+                    # Replace -1e-200 < values < 1e-200 with 0. Otherwise numpy throws errors
+                    if self.pearsonrFinal[k][i][j][0] > float(-1e-200) and self.pearsonrFinal[k][i][j][0] < float(1e-200):
+                        row0.append(0)
+                    else:
+                        row0.append(self.pearsonrFinal[k][i][j][0])
+                    if self.pearsonrFinal[k][i][j][1] > float(-1e-200) and self.pearsonrFinal[k][i][j][1] < float(1e-200):
+                        row1.append(0)
+                    else:
+                        row1.append(self.pearsonrFinal[k][i][j][1])
                 self.pearsonrMean[i][j] = [np.mean(row0), np.mean(row1)]
                 self.pearsonrStd[i][j] = [np.std(row0), np.std(row1)]
 
@@ -744,22 +751,23 @@ class Acm:
         plt.clf()
 
         # PCA of last run
-        self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=precision), _header=['#i', 'j', 'ExplainedVariance'])
+        if len(self.pcaFinal) > 0:
+            self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=precision), _header=['#i', 'j', 'ExplainedVariance'])
 
-        # Create gnuplot scripts from jinja2 template of last run
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
-        templateEnv = jinja2.Environment(loader=templateLoader)
-        template = templateEnv.get_template('pca.plot.jinja2')
-        script = template.render(filenamePcaPng=filenamePcaPng, 
-                filenamePcaTex=filenamePcaTex,
-                filenamePca=os.path.basename(filenamePca),
-                range=str(-0.5) + ':' + str(self.N-1+0.5),
-                using='3',
-                errorbars='')
+            # Create gnuplot scripts from jinja2 template of last run
+            templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+            templateEnv = jinja2.Environment(loader=templateLoader)
+            template = templateEnv.get_template('pca.plot.jinja2')
+            script = template.render(filenamePcaPng=filenamePcaPng, 
+                    filenamePcaTex=filenamePcaTex,
+                    filenamePca=os.path.basename(filenamePca),
+                    range=str(-0.5) + ':' + str(self.N-1+0.5),
+                    using='3',
+                    errorbars='')
 
-        fp = open(filenamePcaPlot, 'w')
-        fp.write(script)
-        fp.close()
+            fp = open(filenamePcaPlot, 'w')
+            fp.write(script)
+            fp.close()
 
         # PCA mean
         self.writeFile(filenamePcaMean, np.around(self.pcaExplainedVarMean, decimals=precision), _data2=np.around(self.pcaExplainedVarStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
@@ -780,26 +788,27 @@ class Acm:
         fp.close()
 
         # Pearson's r of last run
-        pearsonrMean = np.zeros((self.N, self.N), dtype=float)
-        for i in range(self.N):
-            for j in range(self.N):
-                pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][0]
-        self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r1'])
-
-        # Create gnuplot scripts from jinja2 template of last run
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
-        templateEnv = jinja2.Environment(loader=templateLoader)
-        template = templateEnv.get_template('weights.plot.jinja2')
-        script = template.render(filenameWeightsPng=filenamePearsonrPng, 
-                filenameWeightsTex=filenamePearsonrTex,
-                filenameWeights=os.path.basename(filenamePearsonr),
-                range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange='-1:1',
-                using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
-
-        fp = open(filenamePearsonrPlot, 'w')
-        fp.write(script)
-        fp.close()
+        if len(self.pearsonrFinal) > 0:
+            pearsonrMean = np.zeros((self.N, self.N), dtype=float)
+            for i in range(self.N):
+                for j in range(self.N):
+                    pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][0]
+            self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r1'])
+ 
+            # Create gnuplot scripts from jinja2 template of last run
+            templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+            templateEnv = jinja2.Environment(loader=templateLoader)
+            template = templateEnv.get_template('weights.plot.jinja2')
+            script = template.render(filenameWeightsPng=filenamePearsonrPng, 
+                    filenameWeightsTex=filenamePearsonrTex,
+                    filenameWeights=os.path.basename(filenamePearsonr),
+                    range=str(-0.5) + ':' + str(self.N-1+0.5),
+                    cbrange='-1:1',
+                    using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
+ 
+            fp = open(filenamePearsonrPlot, 'w')
+            fp.write(script)
+            fp.close()
 
         # Pearson's r mean
         pearsonrMean = np.zeros((self.N, self.N), dtype=float)
@@ -828,26 +837,27 @@ class Acm:
         fp.close()
 
         # Pearson's r of last run 2
-        pearsonrMean = np.zeros((self.N, self.N), dtype=float)
-        for i in range(self.N):
-            for j in range(self.N):
-                pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][1]
-        self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r2'])
-
-        # Create gnuplot scripts from jinja2 template of last run
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
-        templateEnv = jinja2.Environment(loader=templateLoader)
-        template = templateEnv.get_template('weights.plot.jinja2')
-        script = template.render(filenameWeightsPng=filenamePearsonr2Png, 
-                filenameWeightsTex=filenamePearsonr2Tex,
-                filenameWeights=os.path.basename(filenamePearsonr2),
-                range=str(-0.5) + ':' + str(self.N-1+0.5),
-                cbrange='-1:1',
-                using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
-
-        fp = open(filenamePearsonr2Plot, 'w')
-        fp.write(script)
-        fp.close()
+        if len(self.pearsonrFinal) > 0:
+            pearsonrMean = np.zeros((self.N, self.N), dtype=float)
+            for i in range(self.N):
+                for j in range(self.N):
+                    pearsonrMean[i][j] = self.pearsonrFinal[-1][i][j][1]
+            self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r2'])
+ 
+            # Create gnuplot scripts from jinja2 template of last run
+            templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+            templateEnv = jinja2.Environment(loader=templateLoader)
+            template = templateEnv.get_template('weights.plot.jinja2')
+            script = template.render(filenameWeightsPng=filenamePearsonr2Png, 
+                    filenameWeightsTex=filenamePearsonr2Tex,
+                    filenameWeights=os.path.basename(filenamePearsonr2),
+                    range=str(-0.5) + ':' + str(self.N-1+0.5),
+                    cbrange='-1:1',
+                    using='1:2:(sprintf("%.' + str(precision) + 'f",$3))')
+ 
+            fp = open(filenamePearsonr2Plot, 'w')
+            fp.write(script)
+            fp.close()
 
         # Pearson's r mean 2
         pearsonrMean = np.zeros((self.N, self.N), dtype=float)
@@ -1032,7 +1042,7 @@ class Acm:
         ''' This function loads one dataset from file.
 
             Arguments:
-                _folder (str): All output files will be placed in this folder.
+                _folder (str): Folder to load files from.
                 _nr=None: If the dataset has a number '_nr-xxx', number xxx is loaded.
         '''
         # Load all files from dir
@@ -1069,6 +1079,7 @@ class Acm:
                     break
 
         # Open file and add to self.training
+        print('Loading file ' + str(filenameLoad))
         data = []
         with open(filenameLoad, newline='') as csvfile:
             r = csv.reader(csvfile, delimiter='\t', quotechar='\"')
@@ -1077,3 +1088,73 @@ class Acm:
 
         self.label = data[0]
         self.training = np.array(data[1:], dtype=float)
+
+
+
+    def loadWeights(self, _path):
+        ''' This function loads one weights file from _path.
+
+            Arguments:
+                _path (str): Path to file to load.
+        '''
+        # Open file and add to self.training
+        print('Loading file ' + str(_path))
+        data = []
+        with open(_path, newline='') as csvfile:
+            r = csv.reader(csvfile, delimiter='\t', quotechar='\"')
+            for row in r:
+                data.append(row)
+
+        # First row is labels
+        for label in data[0]:
+            if not label == '':
+                self.label.append(label)
+        del data[0]
+        self.N = len(self.label)
+        self.cntFinal = [1]
+
+        # Reset NN
+        self.resetNN()
+
+        # Convert str to float
+        for cnt1 in range(len(data)):
+            for cnt2 in range(len(data[cnt1])):
+                data[cnt1][cnt2] = data[cnt1][cnt2].replace(',', '.')
+                if data[cnt1][cnt2] == '':
+                    del data[cnt1][cnt2]
+                else:
+                    data[cnt1][cnt2] = float(data[cnt1][cnt2])
+
+        # Is it i, j, weight?
+        if len(data) == 3:
+            for i, j, weight in data:
+                self.w[i][j] = weight
+        else:
+            for i in range(len(data)):
+                for j in range(len(data[i])):
+                    self.w[i][j] = data[i][j]
+
+        # Compute results
+        self.mstFinal.append(minimum_spanning_tree(self.w))
+        self.mrgFinal.append(self.cMrg.computeMrg(self.w)[0])
+        self.wFinal.append(self.w)
+        self.vFinal.append(self.v)
+
+        # Compute results
+        # weights w
+        # Numpy seems to have trouble with a list of 2d matrices.
+        for i in range(self.N):
+            for j in range(self.N):
+                row = []
+                for k in range(len(self.cntFinal)):
+                    row.append(self.wFinal[k][i][j])
+                self.wMean[i][j] = np.mean(row)
+                self.wStd[i][j] = np.std(row)
+        # weights v
+        for i in range(self.N):
+            row = []
+            for k in range(len(self.cntFinal)):
+                row.append(self.vFinal[k][i])
+            self.vMean[i] = np.mean(row)
+            self.vStd[i] = np.std(row)
+
