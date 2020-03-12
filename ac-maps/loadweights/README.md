@@ -1,4 +1,4 @@
-# mst
+# loadweights
 
 tl;dr: WARNING: Do not use Auto Contractive Maps. They do exactly the opposite of what they claim to do.
 
@@ -16,4 +16,4 @@ First, please have a look at the file `config.yaml` in `auto-contractive-maps/ac
 
 ## Running
 
-The file `mst.py` loads the specified weights file and creates graphs and weights. They are placed in `folderOut`.
+The file `loadweights.py` loads the specified weights file and creates graphs and weights. They are placed in `folderOut`.
