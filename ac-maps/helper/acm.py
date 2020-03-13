@@ -174,7 +174,7 @@ class Acm:
         # Create labels
         self.label = []
         for j in range(self.N):
-            self.label.append('R' + str(j))
+            self.label.append('m' + str(j))
 
 
 
@@ -189,7 +189,7 @@ class Acm:
             raise ValueError('For createTrainingCorrelated1 an input vector size of at least 10 is needed.')
 
         # Create labels
-        self.label = ['R0', 'f1(R0)', 'f2(R0)', 'f3(R0)', 'f4(R0)', 'f5(R0)', 'R6', 'R7', 'R8', 'R9'] 
+        self.label = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'] 
 
         # Create correlated training data
         self.training = []
@@ -221,7 +221,7 @@ class Acm:
             raise ValueError('For createTrainingCorrelated2 an input vector size of at least 10 is needed.')
 
         # Create labels
-        self.label = ['R0', 'R1(R0)', 'R2(R0)', 'R3(R0)', 'R4(R0)', 'R5(R0)', 'R6', 'R7(R6)', 'R8', 'R9(R8)'] 
+        self.label = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'] 
 
         # Create correlated training data
         self.training = []
@@ -362,6 +362,7 @@ class Acm:
                 if any(np.greater(self.mOut, 1e+10)) is True or \
                         any(np.less(self.mOut, -1e+10)) is True:
                     successfull = False
+                    print('Float over or underflow in ' + str(cntNr))
                     cntNr -= 1
                     break
 
@@ -459,8 +460,6 @@ class Acm:
     def printTree(self):
         ''' This function prints the last results of self.run().
         '''
-
-        print('Total number of training samples: ' + str(self.cntFinal[-1]) + '\n')
 
         print('MST:')
         corr = self.mstFinal[-1].toarray().astype(float)
@@ -1025,10 +1024,10 @@ class Acm:
             for cnt in range(abs(_nr)):
                 filenameOut = filename + '_nr-' + str(cnt)
                 filenameOut = os.path.join(folder, filenameOut + '.nnv')
-             
+
                 # Create data
                 self.createDataset()
-             
+
                 # Store to file
                 with open(filenameOut, 'w', newline='') as csvfile:
                     w = csv.writer(csvfile, delimiter='\t', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
@@ -1079,7 +1078,7 @@ class Acm:
                     break
 
         # Open file and add to self.training
-        print('Loading file ' + str(filenameLoad))
+        #print('Loading file ' + str(filenameLoad))
         data = []
         with open(filenameLoad, newline='') as csvfile:
             r = csv.reader(csvfile, delimiter='\t', quotechar='\"')
