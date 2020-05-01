@@ -1,7 +1,5 @@
 # test
 
-tl;dr: WARNING: Do not use Auto Contractive Maps. They do exactly the opposite of what they claim to do.
-
 This program implements an Auto Contractive Map algorithm as defined in Buscema, Massimo, et al. "Auto-contractive maps: an artificial adaptive system for data mining. An application to Alzheimer disease." Current Alzheimer Research 5.5 (2008): 481-498.
 
 ## Configuration
