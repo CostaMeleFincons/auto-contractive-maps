@@ -694,7 +694,7 @@ class Acm:
         self.writeFile(filenameWeights, np.around(self.w, decimals=precision), _header=['#i', 'j', 'Weight'])
 
         # Create gnuplot scripts from jinja2 template of last run
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
         templateEnv = jinja2.Environment(loader=templateLoader)
         template = templateEnv.get_template('weights.plot.jinja2')
         script = template.render(filenameWeightsPng=filenameWeightsPng, 
@@ -712,7 +712,7 @@ class Acm:
         self.writeFile(filenameWeightsMean, np.around(self.wMean, decimals=precision), np.around(self.wStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
         templateEnv = jinja2.Environment(loader=templateLoader)
         template = templateEnv.get_template('weights.plot.jinja2')
         script = template.render(filenameWeightsPng=filenameWeightsMeanPng, 
@@ -755,7 +755,7 @@ class Acm:
             self.writeFile(filenamePca, np.around(self.pcaFinal[-1].explained_variance_ratio_, decimals=precision), _header=['#i', 'j', 'ExplainedVariance'])
 
             # Create gnuplot scripts from jinja2 template of last run
-            templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+            templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
             templateEnv = jinja2.Environment(loader=templateLoader)
             template = templateEnv.get_template('pca.plot.jinja2')
             script = template.render(filenamePcaPng=filenamePcaPng, 
@@ -773,7 +773,7 @@ class Acm:
         self.writeFile(filenamePcaMean, np.around(self.pcaExplainedVarMean, decimals=precision), _data2=np.around(self.pcaExplainedVarStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
         templateEnv = jinja2.Environment(loader=templateLoader)
         template = templateEnv.get_template('pca.plot.jinja2')
         script = template.render(filenamePcaPng=filenamePcaMeanPng, 
@@ -796,7 +796,7 @@ class Acm:
             self.writeFile(filenamePearsonr, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r1'])
  
             # Create gnuplot scripts from jinja2 template of last run
-            templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+            templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
             templateEnv = jinja2.Environment(loader=templateLoader)
             template = templateEnv.get_template('weights.plot.jinja2')
             script = template.render(filenameWeightsPng=filenamePearsonrPng, 
@@ -822,7 +822,7 @@ class Acm:
         self.writeFile(filenamePearsonrMean, np.around(pearsonrMean, decimals=precision), np.around(pearsonrStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
         templateEnv = jinja2.Environment(loader=templateLoader)
         template = templateEnv.get_template('weights.plot.jinja2')
         script = template.render(filenameWeightsPng=filenamePearsonrMeanPng, 
@@ -845,7 +845,7 @@ class Acm:
             self.writeFile(filenamePearsonr2, np.around(pearsonrMean, decimals=precision), _header=['#i', 'j', 'r2'])
  
             # Create gnuplot scripts from jinja2 template of last run
-            templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+            templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
             templateEnv = jinja2.Environment(loader=templateLoader)
             template = templateEnv.get_template('weights.plot.jinja2')
             script = template.render(filenameWeightsPng=filenamePearsonr2Png, 
@@ -871,7 +871,7 @@ class Acm:
         self.writeFile(filenamePearsonr2Mean, np.around(pearsonrMean, decimals=precision), np.around(pearsonrStd, decimals=precision), _header=['#i', 'j', 'Mean', 'Std'])
 
         # Create gnuplot scripts from jinja2 template mean
-        templateLoader = jinja2.FileSystemLoader(searchpath=_folderOut)
+        templateLoader = jinja2.FileSystemLoader(searchpath=_pathTemplate)
         templateEnv = jinja2.Environment(loader=templateLoader)
         template = templateEnv.get_template('weights.plot.jinja2')
         script = template.render(filenameWeightsPng=filenamePearsonr2MeanPng, 
