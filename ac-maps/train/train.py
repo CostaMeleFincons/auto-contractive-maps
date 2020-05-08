@@ -55,20 +55,16 @@ def main():
     # Contraction parameter
     C = 5
 
-    # Class initialization
-    # If _pathDataset=None, data is not loaded from file, but generated on the fly.
-    #cAcm = acm.Acm(N, C, _dataset='random', _pathDataset=None)
-    #cAcm = acm.Acm(N, C, _dataset='correlated1', _pathDataset=None)
-    #cAcm = acm.Acm(N, C, _dataset='correlated2', _pathDataset=None)
-    #cAcm = acm.Acm(N, C, _dataset='correlated3', _pathDataset=None)
-    
     # Data is loaded from file
+    
+    # Gang dataset
     #cAcm = acm.Acm(27, 6.19615221, _dataset='gang', _pathDataset=configPathDataset)
-    #cAcm = acm.Acm(10, 3, _dataset='random', _pathDataset=configPathDataset)
-    cAcm = acm.Acm(10, 3, _dataset='correlated2', _pathDataset=configPathDataset)
-    #cAcm = acm.Acm(10, 3, _dataset='correlated1', _pathDataset=configPathDataset)
-    #cAcm = acm.Acm(N, C, _dataset='correlated3', _pathDataset=configPathDataset)
-    #cAcm = acm.Acm(N, C, _dataset='mnist', _pathDataset=configPathDataset) # for MNIST choose N = 28*28 and C = 100
+    
+    # random, correlated1, correlated2
+    cAcm = acm.Acm(10, 3, _dataset='random', _datasetPath=configPathDataset)
+
+    # Mnist
+    #cAcm = acm.Acm(28*28, 100, _dataset=configPathDataset)
 
     # Run training
     cAcm.run(1)

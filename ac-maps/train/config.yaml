@@ -8,7 +8,10 @@ folderOut:   ../out
 pathTemplate: ../templates
 
 # Dataset to load
-# Path to MNIST dataset. Must contain mnist_test.csv and mnist_train.csv.
+# If folder, than dataset with files of filename YYYY-mm-dd_dataset-name_nr-x.nnv is expected. x has no leading 0.
+# If filename, full path to file is expected (might be relative).
+# If only name of dataset, i.e. random, correlated1, correlated2, samples are created.
+# If path to MNIST dataset, the folder must contain mnist_test.csv and mnist_train.csv.
 # Download from e.g.:
 # https://www.python-course.eu/data/mnist/mnist_train.csv
 # https://www.python-course.eu/data/mnist/mnist_test.csv

@@ -31,6 +31,7 @@ import csv
 import sys
 sys.path.insert(0, '../helper')
 import mrg
+import dataset
 
 
 
@@ -38,29 +39,19 @@ class Acm:
     ''' This class implements an Auto Contractive Map.
     '''
 
-    def __init__(self, _inputLength, _contraction, _dataset, _pathDataset=None):
+    def __init__(self, _inputLength, _contraction, _dataset, _datasetPath='', _scale='column'):
         ''' Initialization function.
 
             Arguments:
                 _inputLength (int): Length of input vector
                 _contraction (float): Contraction parameter, _contraction>1.
-                _dataset (str): Name of dataset to use: 'random', 'correlated1', 'correlated2', 'correlated3', or 'mnist'.
-                _pathDataset=None (str): Path to dataset folders.
+                _dataset (str): Name/path/folder of dataset to use: 'random', 'correlated1', 'correlated2', or 'mnist'.
         '''
-
         # Length of input vector
         self.N = _inputLength
 
         # Contraction parameter
         self.C = _contraction
-
-        # Path to MNIST dataset
-        self.pathDataset = _pathDataset
-
-        # Dataset to use
-        self.dataset = _dataset
-        if _dataset == 'mnist':
-            self.loadMnist()
 
         # Labels of training data
         self.label = ['' for x in range(self.N)]
@@ -89,11 +80,23 @@ class Acm:
         # PCA
         self.pearsonrFinal = []
 
-        # Reset
-        self.resetNN()
-
         # MRG class object
         self.cMrg = mrg.Mrg()
+
+        # Dataset class object
+        self.cDataset = dataset.Dataset()
+
+        # Dataset to use
+        self.dataset = _dataset
+
+        # Pathto Dataset
+        self.datasetPath = _datasetPath
+
+        # Scale to use
+        self.scale = _scale
+
+        # Reset
+        self.resetNN()
 
 
 
@@ -131,11 +134,7 @@ class Acm:
             Arguments:
                 _mIn (np.array(dtype=float)): Input vector.
         '''
-
-        # 0. Normalize input to be [0, 1]
-        mIn = np.interp(_mIn, (_mIn.min(), _mIn.max()), (0, 1))
-        assert np.amin(mIn) >= 0, 'Training sample holds data <0: ' + str(mIn)
-        assert np.amax(mIn) <= 1, 'Training sample holds data >1: ' + str(mIn)
+        mIn = _mIn
 
         # 1. Signal In to Hidden
         for i in range(self.N):
@@ -163,178 +162,31 @@ class Acm:
 
 
 
+    def scaleTraining(self):
+        ''' This function scales the training data according to self.scale.
 
-    def createTrainingRandom(self):
-        ''' This function creates 1000 training samples.
-
-            The each vector is drawn randomly from a uniform distribution, meaning there is no correlation.
+            self.scale may have one of the following values: 'rows', 'columns', or 'table'.
         '''
-        # Create random training data
-        self.training = np.random.rand(1000, self.N)
+        if self.scale == 'rows':
+            # Scale row wise
+            for cnt in range(len(self.training)):
+                row = self.training[cnt]
+                self.training[cnt] = np.interp(row, (row.min(), row.max()), (0, 1))
+        elif self.scale == 'columns':
+            # Scale column wise
+            self.training = self.training.transpose()
+            for cnt in range(len(self.training)):
+                row = self.training[cnt]
+                self.training[cnt] = np.interp(row, (row.min(), row.max()), (0, 1))
+            self.training = self.training.transpose()
+        elif self.scale == 'table':
+            # Scale table wise
+            tableMin = np.min(self.training)
+            tableMax = np.max(self.training)
 
-        # Create labels
-        self.label = []
-        for j in range(self.N):
-            self.label.append('m' + str(j))
-
-
-
-    def createTrainingCorrelated1(self):
-        ''' This function creates 1000 training samples.
-
-            The each vector is made up as follows:
-            ['R0', 'f1(R0)', 'f2(R0)', 'f3(R0)', 'f4(R0)', 'f5(R0)', 'R6', 'R7', 'R8', 'R9']
-        '''
-
-        if self.N < 10:
-            raise ValueError('For createTrainingCorrelated1 an input vector size of at least 10 is needed.')
-
-        # Create labels
-        self.label = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'] 
-
-        # Create correlated training data
-        self.training = []
-        for i in range(1000):
-            v = np.zeros(self.N, dtype=float)
-            v[0] = np.random.rand(1)[0]
-            v[1] = v[0]*2
-            v[2] = v[0]+0.1
-            v[3] = v[0]*v[0]
-            v[4] = v[0]*v[0]*2
-            v[5] = v[0]*v[0]*3
-            v[6] = np.random.rand(1)[0]
-            v[7] = np.random.rand(1)[0]
-            v[8] = np.random.rand(1)[0]
-            v[9] = np.random.rand(1)[0]
-
-            self.training.append(v)
-
-
-
-    def createTrainingCorrelated2(self):
-        ''' This function creates 1000 training samples.
-
-            The each vector is made up as follows:
-            ['R0', 'R1(R0)', 'R2(R0)', 'R3(R0)', 'R4(R0)', 'R5(R0)', 'R6', 'R7(R6)', 'R8', 'R9(R8)']
-        '''
-
-        if self.N < 10:
-            raise ValueError('For createTrainingCorrelated2 an input vector size of at least 10 is needed.')
-
-        # Create labels
-        self.label = ['m0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'] 
-
-        # Create correlated training data
-        self.training = []
-        for i in range(1000):
-            v = np.zeros(self.N, dtype=float)
-            v[0] = np.random.rand(1)[0]
-            v[1] = np.random.rand(1)[0]*0.1
-            v[2] = np.random.rand(1)[0]*0.1
-            v[3] = np.random.rand(1)[0]*0.1
-            v[4] = np.random.rand(1)[0]*0.1
-            v[5] = np.random.rand(1)[0]*0.1
-            if v[0] > 0.5:
-                v[1] += 0.9
-                v[2] += 0.9
-                v[3] += 0.9
-                v[4] += 0.9
-                v[5] += 0.9
-            v[6] = np.random.rand(1)[0]*2-1
-            v[7] = -1*v[6]
-            v[8] = np.random.rand(1)[0]*2-1
-            v[9] = -1*v[8]
-
-            self.training.append(v)
-
-
-
-    def createTrainingCorrelated3(self):
-        ''' This function creates 1000 training samples.
-
-            The each vector is made up as follows:
-            ['[0.15, 0.25]', '[0.35, 0.45]', '[0.95, 1.05]']
-        '''
-
-        if self.N < 3:
-            raise ValueError('For createTrainingCorrelated3 an input vector size of at least 3 is needed.')
-
-        # Create labels
-        self.label = ['0.2', '0.4', '1']
-
-        # Create correlated training data
-        self.training = []
-        for i in range(1000):
-            v = np.zeros(self.N, dtype=float)
-            v[0] = np.random.rand(1)[0]*0.1-0.05 + 0.2
-            v[1] = np.random.rand(1)[0]*0.1-0.05 + 0.4
-            v[2] = np.random.rand(1)[0]*0.1-0.05 + 1.0
-
-            self.training.append(v)
-
-
-
-    def createTrainingMnist(self):
-        ''' This function loads the mnist dataset as training data.
-
-            As input parameter it stacks the values of all ones. All other numbers are ignored.
-            1000 Input vectors are created.
-        '''
-
-        if self.N < 28*28:
-            raise ValueError('For createTrainingMnist an input vector size of at least 28*28 is needed.')
-
-        # Create labels
-        #self.label = ['R0', 'R1(R0)', 'R2(R0)', 'R3(R0)', 'R4(R0)', 'R5(R0)', 'R6', 'R7(R6)', 'R8', 'R9(R8)'] 
-
-        # Extract numbers 1 and shuffle
-        data1 = [x[1:] for x in self.mnistTrain if x[0] == 1]
-        random.shuffle(data1)
-
-        self.training = np.array(data1[0:1000], dtype=float)
-
-
-
-    def loadMnist(self):
-        ''' This function loads the mnist dataset from file.
-        '''
-        # Filename checks
-        filenameTraining = os.path.join(self.pathDataset, 'mnist_train.csv')
-        filenameTest = os.path.join(self.pathDataset, 'mnist_test.csv')
-        if not os.path.isdir(self.pathDataset):
-            raise ValueError('Folder not found: ' + str(self.pathDataset))
-        if not os.path.isfile(filenameTraining):
-            raise ValueError('File not found: ' + str(filenameTraining))
-        if not os.path.isfile(filenameTest):
-            raise ValueError('File not found: ' + str(filenameTest))
-
-        # Load data
-        self.mnistTrain = np.loadtxt(filenameTraining, delimiter=",")
-        self.mnistTest = np.loadtxt(filenameTest, delimiter=",") 
-
-
-
-    def createDataset(self, nr=None):
-        ''' This function loads a dataset based on the self.dataset.
-
-            Arguments:
-                _nr (int): Number of dataset to load _nr >= 1. This is only used, if self.pathDataset != None.
-        '''
-        if self.pathDataset is None:
-            if self.dataset == 'random':
-                self.createTrainingRandom()
-            elif self.dataset == 'correlated1':
-                self.createTrainingCorrelated1()
-            elif self.dataset == 'correlated2':
-                self.createTrainingCorrelated2()
-            elif self.dataset == 'correlated3':
-                self.createTrainingCorrelated3()
-            elif self.dataset == 'mnist':
-                self.createTrainingMnist()
-            else:
-                raise ValueError('No dataset specified.')
-        else:
-            self.loadDataset(self.pathDataset, nr)
+            for cnt in range(len(self.training)):
+                row = self.training[cnt]
+                self.training[cnt] = np.interp(row, (tableMin, tableMax), (0, 1))
 
 
 
@@ -353,7 +205,22 @@ class Acm:
             self.resetNN()
 
             # Create training samples
-            self.createDataset(cntNr)
+            if os.path.isdir(self.datasetPath):
+                self.training, self.label = self.cDataset.loadDataset(self.datasetPath, cntNr)
+            elif os.path.isfile(self.datasetPath):
+                self.training, self.label = self.cDataset.loadFile(self.datasetPath)
+            else:
+                if self.dataset.lower() == 'random':
+                    self.training, self.label = self.cDataset.createTrainingRandom(self.N)
+                elif self.dataset.lower() == 'correlated1':
+                    self.training, self.label = self.cDataset.createTrainingCorrelated1(self.N)
+                elif self.dataset.lower() == 'correlated2':
+                    self.training, self.label = self.cDataset.createTrainingCorrelated2(self.N)
+                else:
+                    raise ValueError('Dataset not found.', self.datasetPath, self.dataset)
+
+            # Scale data
+            self.scaleTraining()
 
             # Runtime counter
             cnt = 0
@@ -515,106 +382,6 @@ class Acm:
         self.createGraph(self.mrgFinal[-1])
         plt.show()
         plt.clf()
-
-
-
-    def testMnist(self):
-        ''' This function tests learned weights against the MNIST testing set.
-        '''
-
-        if self.N < 28*28:
-            raise ValueError('For testMnist an input vector size of at least 28*28 is needed.')
-
-        # Extract data as [[input vector], label, prediction=None]
-        data = [[np.array(x[1:]), int(x[0]), None] for x in self.mnistTest]
-
-        for cnt in range(len(data)):
-            # Perform forward pass
-            x = data[cnt]
-
-            # 0. Normalize input to be [0, 1]
-            mIn = np.interp(x[0], (x[0].min(), x[0].max()), (0, 1))
-            assert np.amin(mIn) >= 0, 'Training sample holds data <0: ' + str(mIn)
-            assert np.amax(mIn) <= 1, 'Training sample holds data >1: ' + str(mIn)
-
-            # 1. v
-            mHidden = np.multiply(mIn, self.vFinal[-1])
-
-            # 2. w
-            mOut = np.matmul(self.wFinal[-1], mHidden)
-
-            # Sum up results
-            if np.sum(mOut) > 8000000:
-                data[cnt][2] = 1
-            else:
-                data[cnt][2] = 0
-
-
-        # Compute statistics
-
-        # Evaluate 1 vs all
-        # This treats label 1 as 1, and label 0, 2, 3, 4, ... as 0
-        tp = 0
-        tn = 0
-        fp = 0
-        fn = 0
-        for [vector, label, labelPrediction] in data:
-            # Get label
-            if label == 1:
-                pass
-            else:
-                label = 0
-            if labelPrediction == 1:
-                pass
-            else:
-                labelPrediction = 0
- 
-            if label == 1:
-                if labelPrediction == 1:
-                    tp += 1
-                else:
-                    fn += 1
-            else:
-                if labelPrediction == 1:
-                    fp += 1
-                else:
-                    tn += 1
- 
-        # Confusion matrix
-        print('\n\n1 vs all results:\n  tp fp {0:6.0f} {1:6.0f}\n  fn tn {2:6.0f} {3:6.0f} '.format(
-                tp, fp,
-                fn, tn))
- 
-        # Precision
-        precision = 0
-        if (tp + fp) == 0:
-            print('\n  Precision: {0}'.format('Division by zero'))
-        else:
-            precision = tp/(tp + fp)
-            print('\n  Precision: {0:2.4f}'.format(precision))
- 
-        # Recall
-        recall = 0
-        if (tp + fp) == 0:
-            print('     Recall: {0}'.format('Division by zero'))
-        else:
-            recall = tp/(tp + fn)
-            print('     Recall: {0:2.4f}'.format(recall))
- 
-        # F1-Score
-        f1score = 0
-        if (precision+recall) == 0:
-            print('   F1-Score: {0}'.format('Division by zero'))
-        else:
-            f1score = 2*precision*recall/(precision+recall)
-            print('   F1-Score: {0:2.4f}'.format(f1score))
- 
-        # Accuracy
-        if (tp+fp+fn+tn) == 0:
-            print('   Accuracy: {0}'.format('Division by zero'))
-        else:
-            acc = (tp+tn)/(tp+fp+fn+tn)
-            print('   Accuracy: {0:2.4f}'.format(acc))
 
 
 
@@ -890,7 +657,7 @@ class Acm:
         saveNet['C'] = self.C
         saveNet['label'] = self.label
         saveNet['dataset'] = self.dataset
-        saveNet['pathDataset'] = self.pathDataset
+        saveNet['datasetPath'] = self.datasetPath
         saveNet['cntFinal'] = self.cntFinal
         saveNet['wFinal'] = self.wFinal
         saveNet['vFinal'] = self.vFinal
@@ -920,7 +687,7 @@ class Acm:
             self.C = saveNet['C']
             self.label= saveNet['label']
             self.dataset = saveNet['dataset']
-            self.pathDataset = saveNet['pathDataset']
+            self.datasetPath = saveNet['datasetPath']
             self.cntFinal = saveNet['cntFinal']
             self.wFinal = saveNet['wFinal']
             self.vFinal = saveNet['vFinal']
@@ -985,109 +752,6 @@ class Acm:
                     datumStr += '\n'
         fp.write(datumStr)
         fp.close()
-
-
-
-    def saveDataset(self, _folder, _nr=None):
-        ''' This function saves the used dataset to file.
-
-            Arguments:
-                _folder (str): All output files will be placed in this folder.
-                _nr=None: How many datasets should be created. If set to None, current dataset is stored.
-        '''
-        # Filenames
-        date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        filename = str(date) + '_dataset-' + str(self.dataset)
-
-        # Create folder
-        folder = os.path.join(_folder, self.dataset)
-        if not os.path.isdir(folder):
-            try:
-                os.mkdir(folder)
-            except OSError:
-                print ("Creation of the directory %s failed" % folder)
-
-
-        if _nr is None:
-            filenameOut = os.path.join(folder, filename + '.nnv')
-         
-            # Create data, if dataset is empty
-            if len(self.training) == 1:
-                self.createDataset()
-         
-            # Store to file
-            with open(filenameOut, 'w', newline='') as csvfile:
-                w = csv.writer(csvfile, delimiter='\t', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-                w.writerow(self.label)
-                for row in self.training:
-                    w.writerow(row)
-        else:
-            for cnt in range(abs(_nr)):
-                filenameOut = filename + '_nr-' + str(cnt)
-                filenameOut = os.path.join(folder, filenameOut + '.nnv')
-
-                # Create data
-                self.createDataset()
-
-                # Store to file
-                with open(filenameOut, 'w', newline='') as csvfile:
-                    w = csv.writer(csvfile, delimiter='\t', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-                    w.writerow(self.label)
-                    for row in self.training:
-                       w.writerow(row)
-
-
-
-    def loadDataset(self, _folder, _nr=None):
-        ''' This function loads one dataset from file.
-
-            Arguments:
-                _folder (str): Folder to load files from.
-                _nr=None: If the dataset has a number '_nr-xxx', number xxx is loaded.
-        '''
-        # Load all files from dir
-        filelist = []
-        for filename in os.listdir(_folder):
-            filename = os.path.join(_folder, filename)
-            filelist.append(filename)
-        filelist = sorted(filelist)
-
-        # Search for file
-        filenameLoad = None
-        for filename in filelist:
-            foundDataset = False
-            foundNr = False
-            dataset = None
-            nr = None
-            splits = os.path.splitext(os.path.basename(filename))[0].split('_')
-            for split in splits:
-                if split[0:8] == 'dataset-':
-                    dataset = split[8:]
-                    foundDataset = True
-                if split[0:3] == 'nr-':
-                    if int(split[3:]) == _nr:
-                        nr = int(split[3:])
-                        foundNr = True
-
-            if _nr is None:
-                if foundDataset:
-                    filenameLoad = filename
-                    break
-            else:
-                if foundDataset and foundNr:
-                    filenameLoad = filename
-                    break
-
-        # Open file and add to self.training
-        #print('Loading file ' + str(filenameLoad))
-        data = []
-        with open(filenameLoad, newline='') as csvfile:
-            r = csv.reader(csvfile, delimiter='\t', quotechar='\"')
-            for row in r:
-                data.append(row)
-
-        self.label = data[0]
-        self.training = np.array(data[1:], dtype=float)
 
 
 
