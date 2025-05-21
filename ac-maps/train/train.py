@@ -48,12 +48,13 @@ def main():
     if not 'pathDataset' in config:
         raise ValueError('pathDataset not specified in config file. Exiting.')
     configPathDataset = str(config['pathDataset'])
+    configScaling = str(config['scaling'])
 
     # Length of input vector
-    N = 10
+    N = 13
 
     # Contraction parameter
-    C = 5
+    C = 3
 
     # Data is loaded from file
     
@@ -61,7 +62,9 @@ def main():
     #cAcm = acm.Acm(27, 6.19615221, _dataset='gang', _pathDataset=configPathDataset)
     
     # random, correlated1, correlated2
-    cAcm = acm.Acm(10, 3, _dataset='random', _datasetPath=configPathDataset)
+    #cAcm = acm.Acm(10, 3, _dataset='random', _datasetPath=configPathDataset)
+
+    cAcm = acm.Acm(N, C, _dataset='heart', _datasetPath=configPathDataset, _scale=configScaling)
 
     # Mnist
     #cAcm = acm.Acm(28*28, 100, _dataset=configPathDataset)

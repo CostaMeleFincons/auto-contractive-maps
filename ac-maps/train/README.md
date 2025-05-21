@@ -18,3 +18,7 @@ MNIST dataset folder must contain `mnist_test.csv` and `mnist_train.csv`. Downlo
 
 The file `train.py` offers four training sets: `random`, `correlated1`, `correlated2`, and `mnist`.
 Results will be placed in `folderOut`.
+
+1. create out folder
+2. cd ac-maps/train
+3. python train.py

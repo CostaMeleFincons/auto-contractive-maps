@@ -227,12 +227,14 @@ class Acm:
             successfull = True
             for x in self.training:
                 # For random data, the self.mOut will sometimes run away and will create a buffer overflow
+                '''
                 if any(np.greater(self.mOut, 1e+10)) is True or \
                         any(np.less(self.mOut, -1e+10)) is True:
                     successfull = False
                     print('Float over or underflow in ' + str(cntNr))
                     cntNr -= 1
                     break
+                '''
 
                 #if len(self.cntFinal) > 1:
                 #    print('a', self.cntFinal[-1], self.mOut)

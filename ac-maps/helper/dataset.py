@@ -17,6 +17,8 @@ along with ac-maps.  If not, see <http://www.gnu.org/licenses/>.
 import csv
 import os
 import numpy as np
+import random
+from datetime import datetime
 
 import sys
 sys.path.insert(0, '../helper')
@@ -200,7 +202,7 @@ class Dataset:
 
 
 
-    def createAndSaveDataset(self, _folder, _dataset, _label, _nr=1000):
+    def createAndSaveDataset(self, _folder, _dataset, _label, _nr=1000, _N=10):
         ''' This function saves the used dataset to file.
 
             Arguments:
@@ -227,7 +229,7 @@ class Dataset:
 
             # Create data
             if _dataset == 'random':
-                trainig, label = self.createTrainingRandom()
+                trainig, label = self.createTrainingRandom(_N)
             elif _dataset == 'correlated1':
                 trainig, label = self.createTrainingCorrelated1()
             elif _dataset == 'correlated2':
@@ -243,7 +245,7 @@ class Dataset:
             with open(filenameOut, 'w', newline='') as csvfile:
                 w = csv.writer(csvfile, delimiter='\t', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
                 w.writerow(label)
-                for row in training:
+                for row in trainig:
                    w.writerow(row)
 
 
@@ -265,6 +267,8 @@ class Dataset:
         # Search for file
         filenameLoad = None
         for filename in filelist:
+            filename = os.path.normpath(filename)
+            print("filename: " + filename) 
             foundDataset = False
             foundNr = False
             dataset = None
