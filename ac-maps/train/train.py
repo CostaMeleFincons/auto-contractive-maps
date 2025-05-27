@@ -51,7 +51,7 @@ def main():
     configScaling = str(config['scaling'])
 
     # Length of input vector
-    N = 13
+    N = 14
 
     # Contraction parameter
     C = 3

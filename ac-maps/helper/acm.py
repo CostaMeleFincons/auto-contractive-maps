@@ -403,8 +403,12 @@ class Acm:
                     cellFrom.append(self.label[i])
                     cellTo.append(self.label[j])
                     corrEdge.append(_w[i][j])
-                    G.add_edge(self.label[i], self.label[j], weight=_w[i][j]*10000)
-        nx.draw(G, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
+                    G.add_edge(self.label[i], self.label[j], weight=_w[i][j]*10000, label=round(_w[i][j], 2))
+        pos = nx.kamada_kawai_layout(G)
+        plt.figure(figsize=(8, 6))
+        nx.draw(G, pos, with_labels=True, node_color='orange', node_size=400, edge_color='black', linewidths=10, font_size=15)
+        edge_labels = nx.get_edge_attributes(G, 'label')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.5, rotate=False)
 
 
 
@@ -498,7 +502,7 @@ class Acm:
         # Save graph of last run MST
         self.createGraph(self.mstFinal[-1].toarray().astype(float))
         plt.savefig(filenameGraphMst, dpi=None, facecolor='w', edgecolor='w',
-                orientation='portrait')
+                    orientation='portrait')
         plt.clf()
 
         # Save graph of last run MRG
